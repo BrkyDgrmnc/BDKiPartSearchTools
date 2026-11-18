@@ -73,12 +73,16 @@ def validate_official_rules(meta: dict, plugin_meta: dict) -> None:
     desc = meta.get("description", "")
     assert 1 <= len(desc) <= 150, f"Short description must be <= 150 chars (got {len(desc)})"
 
-    # 3. No download_* keys inside archive metadata.json
+    # 3. Validate tags against ^[a-z][-a-z0-9]{0,48}[a-z0-9]$
+    for t in meta.get("tags", []):
+        assert re.match(r"^[a-z][-a-z0-9]{0,48}[a-z0-9]$", t), f"Tag '{t}' does not match ^[a-z][-a-z0-9]{{0,48}}[a-z0-9]$"
+
+    # 4. No download_* keys inside archive metadata.json
     for v in meta.get("versions", []):
         for forbidden in ("download_url", "download_sha256", "download_size", "install_size"):
             assert forbidden not in v, f"Archive metadata.json must NOT contain {forbidden}"
 
-    # 4. Validate plugin.json
+    # 5. Validate plugin.json
     assert plugin_meta.get("identifier") == ident, "plugin.json identifier must match metadata.json identifier"
     print("[OK] Official KiCad PCM & IPC API rules verified!")
 
