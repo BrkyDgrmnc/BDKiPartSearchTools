@@ -9,20 +9,20 @@
     "name": "Berkay Degirmenci",
     "contact": {
       "email": "berkay.degirmenci@aridrones.com",
-      "web": "https://github.com/berkaydegirmenci/BDKiPartSearchTools"
+      "web": "https://github.com/BrkyDgrmnc/BDKiPartSearchTools"
     }
   },
   "maintainer": {
     "name": "Berkay Degirmenci",
     "contact": {
       "email": "berkay.degirmenci@aridrones.com",
-      "web": "https://github.com/berkaydegirmenci/BDKiPartSearchTools"
+      "web": "https://github.com/BrkyDgrmnc/BDKiPartSearchTools"
     }
   },
   "license": "MIT",
   "resources": {
-    "homepage": "https://github.com/berkaydegirmenci/BDKiPartSearchTools",
-    "Bug Tracker": "https://github.com/berkaydegirmenci/BDKiPartSearchTools/issues"
+    "homepage": "https://github.com/BrkyDgrmnc/BDKiPartSearchTools",
+    "Bug Tracker": "https://github.com/BrkyDgrmnc/BDKiPartSearchTools/issues"
   },
   "tags": [
     "search",

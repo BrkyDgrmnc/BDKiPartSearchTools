@@ -152,7 +152,7 @@ def build_package() -> str:
 
     submission_meta = json.loads(json.dumps(meta))
     submission_meta["versions"][0].update({
-        "download_url": f"https://github.com/aridrones/kicad-lcsc-digikey-plugin/releases/download/v{ver}/{zip_filename}",
+        "download_url": f"https://github.com/BrkyDgrmnc/BDKiPartSearchTools/releases/download/v{ver}/{zip_filename}",
         "download_sha256": sha256_hash,
         "download_size": download_size,
         "install_size": install_size,
