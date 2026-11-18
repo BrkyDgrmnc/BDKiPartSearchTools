@@ -85,6 +85,7 @@ class MainImporterDialog(wx.Dialog):
         self.selected_part: Optional[Dict[str, Any]] = None
         self.selected_cad: Optional[Dict[str, Any]] = None
         self.bom_rows: List[Dict[str, Any]] = []
+        self._search_seq: int = 0
 
         self._build_ui()
         self.Centre()
@@ -189,9 +190,14 @@ class MainImporterDialog(wx.Dialog):
         self.btn_search = wx.Button(panel, label="🔍 Ara")
         self.btn_search.SetFont(wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         self.btn_search.Bind(wx.EVT_BUTTON, self._on_search_clicked)
+        self.btn_search.SetDefault()
+
+        self.btn_clear_search = wx.Button(panel, label="✖ Temizle", size=(76, -1))
+        self.btn_clear_search.Bind(wx.EVT_BUTTON, self._on_clear_search_clicked)
 
         search_box.Add(wx.StaticText(panel, label="Arama / Parça No:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 6)
-        search_box.Add(self.txt_query, 1, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
+        search_box.Add(self.txt_query, 1, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 4)
+        search_box.Add(self.btn_clear_search, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
         search_box.Add(wx.StaticText(panel, label="Kaynak:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 6)
         search_box.Add(self.choice_source, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
         search_box.Add(self.btn_search, 0, wx.ALIGN_CENTER_VERTICAL)
@@ -318,11 +324,14 @@ class MainImporterDialog(wx.Dialog):
         if busy:
             self.gauge.Show()
             self.gauge.Pulse()
-            self.btn_search.Enable(False)
         else:
             self.gauge.Hide()
-            self.btn_search.Enable(True)
+        self.btn_search.Enable(True)
         self.Layout()
+
+    def _on_clear_search_clicked(self, event):
+        self.txt_query.SetValue("")
+        self.txt_query.SetFocus()
 
     def _on_search_clicked(self, event):
         query = self.txt_query.GetValue().strip()
@@ -342,36 +351,59 @@ class MainImporterDialog(wx.Dialog):
             )
             return
 
+        self._search_seq += 1
+        current_seq = self._search_seq
+        self.selected_part = None
+        self.selected_cad = None
+        self.btn_import.Enable(False)
+        self.sym_canvas.set_geometry(None, "Aranıyor...")
+        self.fp_canvas.set_geometry(None, "Aranıyor...", False)
+
         self._set_busy(True, f"'{query}' aranıyor (LCSC / EasyEDA & DigiKey)...")
         self.list_results.DeleteAllItems()
         self.search_results = []
 
         def worker():
-            results = self.supplier_service.search(query, mode=mode)
-            wx.CallAfter(self._on_search_finished, results, query)
+            try:
+                results = self.supplier_service.search(query, mode=mode)
+            except Exception as ex:
+                print(f"[MainImporterDialog] Search thread error: {ex}")
+                results = []
+            wx.CallAfter(self._on_search_finished, results, query, current_seq)
 
         threading.Thread(target=worker, daemon=True).start()
 
-    def _on_search_finished(self, results: List[Dict[str, Any]], query: str):
-        self.search_results = results
-        self.list_results.DeleteAllItems()
+    def _on_search_finished(self, results: List[Dict[str, Any]], query: str, seq: int = 0):
+        if seq and seq != self._search_seq:
+            return
+        try:
+            self.search_results = results or []
+            self.list_results.DeleteAllItems()
 
-        for i, item in enumerate(results):
-            idx = self.list_results.InsertItem(i, str(item.get("source", "")))
-            self.list_results.SetItem(idx, 1, str(item.get("mpn", "")))
-            self.list_results.SetItem(idx, 2, str(item.get("manufacturer", "")))
-            self.list_results.SetItem(idx, 3, str(item.get("category", "")))
-            self.list_results.SetItem(idx, 4, str(item.get("package", "")))
-            self.list_results.SetItem(idx, 5, str(item.get("lcsc_part", "")))
-            self.list_results.SetItem(idx, 6, str(item.get("digikey_part", "")))
-            up = float(item.get("unit_price") or 0.0)
-            self.list_results.SetItem(idx, 7, f"${up:.4f}" if up > 0 else "-")
-            self.list_results.SetItem(idx, 8, str(item.get("stock", 0)))
-            self.list_results.SetItem(idx, 9, str(item.get("description", "")))
+            for i, item in enumerate(self.search_results):
+                idx = self.list_results.InsertItem(i, str(item.get("source", "")))
+                self.list_results.SetItem(idx, 1, str(item.get("mpn", "")))
+                self.list_results.SetItem(idx, 2, str(item.get("manufacturer", "")))
+                self.list_results.SetItem(idx, 3, str(item.get("category", "")))
+                self.list_results.SetItem(idx, 4, str(item.get("package", "")))
+                self.list_results.SetItem(idx, 5, str(item.get("lcsc_part", "")))
+                self.list_results.SetItem(idx, 6, str(item.get("digikey_part", "")))
+                try:
+                    up = float(item.get("unit_price") or 0.0)
+                except Exception:
+                    up = 0.0
+                self.list_results.SetItem(idx, 7, f"${up:.4f}" if up > 0 else "-")
+                self.list_results.SetItem(idx, 8, str(item.get("stock", 0)))
+                self.list_results.SetItem(idx, 9, str(item.get("description", "")))
 
-        self._set_busy(False, f"'{query}' için {len(results)} sonuç bulundu.")
-        if results:
-            self.list_results.Select(0)
+            self._set_busy(False, f"'{query}' için {len(self.search_results)} sonuç bulundu.")
+            if self.search_results:
+                self.list_results.Select(0)
+            else:
+                self.sym_canvas.set_geometry(None, "Sonuç Yok")
+                self.fp_canvas.set_geometry(None, "Sonuç Yok", False)
+        except Exception as ex:
+            self._set_busy(False, f"Arama sonuçları işlenirken hata: {ex}")
 
     def _on_result_selected(self, event):
         idx = event.GetIndex()
@@ -394,7 +426,10 @@ class MainImporterDialog(wx.Dialog):
         self.txt_pkg.SetValue(str(part.get("package") or ""))
         self.txt_lcsc_code.SetValue(str(part.get("lcsc_part") or ""))
         self.txt_dk_code.SetValue(str(part.get("digikey_part") or ""))
-        up = float(part.get("unit_price") or 0.0)
+        try:
+            up = float(part.get("unit_price") or 0.0)
+        except Exception:
+            up = 0.0
         self.txt_unit_price.SetValue(f"{up:.4f}" if up > 0 else "")
         self.txt_mfg.SetValue(str(part.get("manufacturer") or ""))
 
@@ -405,7 +440,11 @@ class MainImporterDialog(wx.Dialog):
         self._set_busy(True, f"{part.get('mpn')} için Şematik Sembol, Footprint ve 3D model verisi çekiliyor...")
 
         def worker():
-            cad = self.supplier_service.resolve_cad_for_part(part)
+            try:
+                cad = self.supplier_service.resolve_cad_for_part(part)
+            except Exception as ex:
+                print(f"[MainImporterDialog] CAD resolve error: {ex}")
+                cad = None
             wx.CallAfter(self._on_cad_loaded, part, cad)
 
         threading.Thread(target=worker, daemon=True).start()
@@ -413,38 +452,41 @@ class MainImporterDialog(wx.Dialog):
     def _on_cad_loaded(self, part: Dict[str, Any], cad: Optional[Dict[str, Any]]):
         if part is not self.selected_part:
             return
-        self.selected_cad = cad
+        try:
+            self.selected_cad = cad
 
-        if not cad:
-            self.sym_canvas.set_geometry(None, "CAD Bulunamadı")
-            self.fp_canvas.set_geometry(None, "CAD Bulunamadı", False)
-            self._set_busy(False, f"{part.get('mpn')} için EasyEDA/LCSC CAD modeli bulunamadı.")
-            return
+            if not cad:
+                self.sym_canvas.set_geometry(None, "CAD Bulunamadı")
+                self.fp_canvas.set_geometry(None, "CAD Bulunamadı", False)
+                self._set_busy(False, f"{part.get('mpn')} için EasyEDA/LCSC CAD modeli bulunamadı.")
+                return
 
-        meta = cad.get("metadata", {})
-        if meta.get("prefix"):
-            self.txt_ref_prefix.SetValue(meta["prefix"])
-        if cad.get("footprint_name"):
-            self.txt_fp_name.SetValue(cad["footprint_name"])
-        if not self.txt_lcsc_code.GetValue().strip() and cad.get("lcsc_part"):
-            self.txt_lcsc_code.SetValue(cad["lcsc_part"])
-        if not self.txt_mfg.GetValue().strip() and meta.get("manufacturer"):
-            self.txt_mfg.SetValue(meta["manufacturer"])
+            meta = cad.get("metadata", {})
+            if meta.get("prefix"):
+                self.txt_ref_prefix.SetValue(meta["prefix"])
+            if cad.get("footprint_name"):
+                self.txt_fp_name.SetValue(cad["footprint_name"])
+            if not self.txt_lcsc_code.GetValue().strip() and cad.get("lcsc_part"):
+                self.txt_lcsc_code.SetValue(cad["lcsc_part"])
+            if not self.txt_mfg.GetValue().strip() and meta.get("manufacturer"):
+                self.txt_mfg.SetValue(meta["manufacturer"])
 
-        sym_geom = self.converter.parse_symbol_geometry(cad.get("symbol_data") or {})
-        fp_geom = self.converter.parse_footprint_geometry(cad.get("footprint_data") or {})
-        has_3d = bool(cad.get("model_3d") and cad["model_3d"].get("uuid"))
+            sym_geom = self.converter.parse_symbol_geometry(cad.get("symbol_data") or {})
+            fp_geom = self.converter.parse_footprint_geometry(cad.get("footprint_data") or {})
+            has_3d = bool(cad.get("model_3d") and cad["model_3d"].get("uuid"))
 
-        self.sym_canvas.set_geometry(sym_geom, part.get("mpn", ""))
-        self.fp_canvas.set_geometry(fp_geom, cad.get("footprint_name", ""), has_3d=has_3d)
-        self.btn_import.Enable(True)
-        self.btn_datasheet.Enable(bool(part.get("datasheet") or meta.get("datasheet")))
+            self.sym_canvas.set_geometry(sym_geom, part.get("mpn", ""))
+            self.fp_canvas.set_geometry(fp_geom, cad.get("footprint_name", ""), has_3d=has_3d)
+            self.btn_import.Enable(True)
+            self.btn_datasheet.Enable(bool(part.get("datasheet") or meta.get("datasheet")))
 
-        self._set_busy(
-            False,
-            f"CAD hazır: {len(sym_geom.get('pins', []))} pin sembol, {len(fp_geom.get('pads', []))} pad footprint"
-            + (", 3D STEP modeli mevcut." if has_3d else "."),
-        )
+            self._set_busy(
+                False,
+                f"CAD hazır: {len(sym_geom.get('pins', []))} pin sembol, {len(fp_geom.get('pads', []))} pad footprint"
+                + (", 3D STEP modeli mevcut." if has_3d else "."),
+            )
+        except Exception as ex:
+            self._set_busy(False, f"CAD önizleme hatası: {ex}")
 
     def _on_import_clicked(self, event):
         if not self.selected_part or not self.selected_cad:

@@ -32,8 +32,6 @@ class LcscEasyEdaClient:
 
     def __init__(self, timeout: int = 12):
         self.timeout = timeout
-        self.session = requests.Session()
-        self.session.headers.update(BROWSER_HEADERS)
 
     @staticmethod
     def normalize_lcsc_id(code: str) -> str:
@@ -62,7 +60,7 @@ class LcscEasyEdaClient:
             }
             headers = dict(BROWSER_HEADERS)
             headers["Content-Type"] = "application/json"
-            resp = self.session.post(
+            resp = requests.post(
                 self.JLC_SEARCH_URL,
                 json=payload,
                 headers=headers,
@@ -200,12 +198,12 @@ class LcscEasyEdaClient:
 
         url = self.EASYEDA_COMP_URL.format(lcsc_id=lcsc_id)
         try:
-            resp = self.session.get(url, timeout=self.timeout)
+            resp = requests.get(url, headers=BROWSER_HEADERS, timeout=self.timeout)
             if resp.status_code != 200:
                 return None
             payload = resp.json()
             result = payload.get("result")
-            if not result:
+            if not result or not isinstance(result, dict):
                 return None
 
             data_str = result.get("dataStr") or {}
@@ -226,8 +224,8 @@ class LcscEasyEdaClient:
             # Extract 3D model UUID and transform from SVGNODE in footprint shapes
             model_3d_info = self._extract_3d_info(pkg_shapes, pkg_head)
 
-            lcsc_meta = result.get("lcsc") or {}
-            szlcsc_meta = result.get("szlcsc") or {}
+            lcsc_meta = result.get("lcsc") if isinstance(result.get("lcsc"), dict) else {}
+            szlcsc_meta = result.get("szlcsc") if isinstance(result.get("szlcsc"), dict) else {}
 
             mpn = (
                 c_para.get("Manufacturer Part")
@@ -253,8 +251,22 @@ class LcscEasyEdaClient:
             prefix = (c_para.get("pre") or "U?").replace("?", "").strip()
             value = c_para.get("Value") or mpn
 
-            unit_price = float(lcsc_meta.get("price") or szlcsc_meta.get("price") or 0.0)
-            stock = int(lcsc_meta.get("stock") or szlcsc_meta.get("stock") or 0)
+            try:
+                unit_price = float(lcsc_meta.get("price") or szlcsc_meta.get("price") or 0.0)
+            except Exception:
+                unit_price = 0.0
+            try:
+                stock = int(lcsc_meta.get("stock") or szlcsc_meta.get("stock") or 0)
+            except Exception:
+                stock = 0
+
+            tags_raw = result.get("tags") or []
+            if isinstance(tags_raw, list):
+                raw_cat_str = " ".join(str(t) for t in tags_raw)
+            elif isinstance(tags_raw, dict):
+                raw_cat_str = " ".join(str(v) for v in tags_raw.values())
+            else:
+                raw_cat_str = str(tags_raw)
 
             return {
                 "lcsc_part": lcsc_id,
@@ -276,7 +288,7 @@ class LcscEasyEdaClient:
                     "stock": stock,
                     "part_type": c_para.get("JLCPCB Part Class", ""),
                     "supplier_url": lcsc_meta.get("url") or f"https://www.lcsc.com/product-detail/{lcsc_id}.html",
-                    "raw_category": " ".join(result.get("tags") or []),
+                    "raw_category": raw_cat_str,
                     "c_para": c_para,
                 },
             }
@@ -329,7 +341,7 @@ class LcscEasyEdaClient:
             return False
         url = self.EASYEDA_STEP_URL.format(uuid_3d=uuid_3d)
         try:
-            resp = self.session.get(url, timeout=20)
+            resp = requests.get(url, headers=BROWSER_HEADERS, timeout=20)
             if resp.status_code == 200 and len(resp.content) > 100 and b"ISO-10303-21" in resp.content[:256]:
                 with open(target_file, "wb") as f:
                     f.write(resp.content)
@@ -344,7 +356,7 @@ class LcscEasyEdaClient:
             return False
         url = self.EASYEDA_OBJ_URL.format(uuid_3d=uuid_3d)
         try:
-            resp = self.session.get(url, timeout=20)
+            resp = requests.get(url, headers=BROWSER_HEADERS, timeout=20)
             if resp.status_code != 200 or not resp.text:
                 return False
             wrl_content = self._convert_easyeda_obj_to_wrl(resp.text)
