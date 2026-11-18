@@ -1,6 +1,6 @@
-# KiCad LCSC & DigiKey Component Importer and Smart BOM (`com.github.aridrones.lcsc-digikey-importer`)
+# BDPartSearchTools (`com.berkaydegirmenci.bdpartsearchtools`)
 
-A KiCad 8 / 9 / 10 plugin to search electronic components from **LCSC (EasyEDA)** and **DigiKey**, preview and import their **Schematic Symbols (`.kicad_sym`)**, **PCB Footprints (`.kicad_mod`)**, and **3D Models (`.step` / `.wrl`)** into categorized libraries, and generate **priced Engineering BOMs** with live stock and part numbers.
+**BDPartSearchTools** (by Berkay Değirmenci) is a KiCad 8 / 9 / 10 plugin to search electronic components from online suppliers (**LCSC / EasyEDA**, **DigiKey**, etc.), preview and import their **Schematic Symbols (`.kicad_sym`)**, **PCB Footprints (`.kicad_mod`)**, and **3D Models (`.step` / `.wrl`)** into categorized libraries, and generate **priced Engineering BOMs** with live stock and part numbers.
 
 ## Key Features
 * **Direct Schematic & PCB Editor Integration:** Supports both KiCad 9/10 IPC API (`plugin.json` for Schematic Editor, Symbol Editor, PCB Editor, and Project Manager) and `pcbnew.ActionPlugin`.
@@ -14,7 +14,7 @@ Run with KiCad's Python interpreter:
 python build_pcm_package.py
 ```
 This validates `metadata.json` and `plugins/plugin.json` against KiCad's official JSON schemas and outputs:
-* `dist/com.github.aridrones.lcsc-digikey-importer-1.0.0-pcm.zip` (Installable via *KiCad -> Plugin and Content Manager -> Install from File...*)
+* `dist/com.berkaydegirmenci.bdpartsearchtools-1.0.0-pcm.zip` (Installable via *KiCad -> Plugin and Content Manager -> Install from File...*)
 * `dist/metadata-submission.json` (Includes `download_sha256`, `download_size`, and `install_size` for submitting to `https://gitlab.com/kicad/addons/metadata`)
 
 ## License

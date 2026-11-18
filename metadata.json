@@ -1,38 +1,38 @@
 {
   "$schema": "https://go.kicad.org/pcm/schemas/v1",
-  "name": "LCSC & DigiKey Component Importer and Smart BOM",
-  "description": "Import symbols, footprints, and 3D models from LCSC/EasyEDA and DigiKey, and export priced BOMs.",
-  "description_full": "Search and import electronic components from LCSC (EasyEDA) and DigiKey directly into KiCad libraries (.kicad_sym, .kicad_mod, .step, .wrl) with automatic sym-lib-table and fp-lib-table registration.\n\nFeatures:\n- Live 2D Schematic Symbol and PCB Footprint preview before import\n- Automatic category-based or unified library organization (Global or Project scope)\n- Embeds full supplier and engineering metadata (MPN, Manufacturer, LCSC Part #, DigiKey Part #, Unit Price, Stock, Datasheet) into symbols\n- Smart BOM & Live Pricing/Stock manager supporting Engineering CSV, JLCPCB PCBA BOM, and DigiKey Bulk Upload CSV\n- Accessible from both Schematic Editor (Eeschema) and PCB Editor (Pcbnew) in KiCad 9/10.\n- Note: User interface is currently provided in Turkish.",
-  "identifier": "com.aridrones.lcscdigikeyimporter",
+  "name": "BDPartSearchTools",
+  "description": "Component search, symbol/footprint/3D model library importer, and smart priced BOM tool by Berkay Degirmenci.",
+  "description_full": "BDPartSearchTools (by Berkay Degirmenci) allows you to search electronic components from online suppliers (LCSC/EasyEDA, DigiKey, etc.) and import them directly into KiCad libraries (.kicad_sym, .kicad_mod, .step, .wrl) with automatic sym-lib-table and fp-lib-table registration.\n\nFeatures:\n- Live 2D Schematic Symbol and PCB Footprint preview before import\n- Automatic category-based or unified library organization (Global or Project scope)\n- Embeds full supplier and engineering metadata (MPN, Manufacturer, Supplier Part #, Unit Price, Stock, Datasheet) into symbols\n- Smart BOM & Live Pricing/Stock manager supporting Engineering CSV, JLCPCB PCBA BOM, and DigiKey Bulk Upload CSV\n- Accessible from both Schematic Editor (Eeschema) and PCB Editor (Pcbnew) in KiCad 9/10.\n- Note: User interface is currently provided in Turkish.",
+  "identifier": "com.berkaydegirmenci.bdpartsearchtools",
   "type": "plugin",
   "author": {
     "name": "Berkay Degirmenci",
     "contact": {
       "email": "berkay.degirmenci@aridrones.com",
-      "web": "https://github.com/aridrones/kicad-lcsc-digikey-plugin"
+      "web": "https://github.com/berkaydegirmenci/BDPartSearchTools"
     }
   },
   "maintainer": {
     "name": "Berkay Degirmenci",
     "contact": {
       "email": "berkay.degirmenci@aridrones.com",
-      "web": "https://github.com/aridrones/kicad-lcsc-digikey-plugin"
+      "web": "https://github.com/berkaydegirmenci/BDPartSearchTools"
     }
   },
   "license": "MIT",
   "resources": {
-    "homepage": "https://github.com/aridrones/kicad-lcsc-digikey-plugin",
-    "Bug Tracker": "https://github.com/aridrones/kicad-lcsc-digikey-plugin/issues"
+    "homepage": "https://github.com/berkaydegirmenci/BDPartSearchTools",
+    "Bug Tracker": "https://github.com/berkaydegirmenci/BDPartSearchTools/issues"
   },
   "tags": [
-    "lcsc",
-    "digikey",
-    "easyeda",
+    "search",
     "library",
     "bom",
     "step-3d",
     "footprint",
-    "symbol"
+    "symbol",
+    "lcsc",
+    "digikey"
   ],
   "keep_on_update": [
     "^/plugins/.*/data/.*\\.json$"

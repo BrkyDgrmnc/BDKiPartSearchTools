@@ -1,5 +1,5 @@
 """
-KiCad 10 ActionPlugin Registration for LCSC & DigiKey Component Importer & Smart BOM
+KiCad 10 ActionPlugin Registration for BDPartSearchTools (by Berkay Değirmenci)
 """
 
 import os
@@ -11,12 +11,11 @@ try:
 
     class LcscDigiKeyImporterActionPlugin(pcbnew.ActionPlugin):
         def defaults(self):
-            self.name = "LCSC & DigiKey Kütüphane ve BOM Yöneticisi"
+            self.name = "BDPartSearchTools"
             self.category = "Library & BOM Tools"
             self.description = (
-                "LCSC / EasyEDA ve DigiKey üzerinden komponent bilgisi, şematik sembol (.kicad_sym), "
-                "footprint (.kicad_mod) ve 3D model (.step/.wrl) indirip kütüphaneye ekler; "
-                "fiyat, stok ve parça numaralarıyla birlikte mühendislik BOM çıktısı üretir."
+                "BDPartSearchTools (by Berkay Değirmenci) - Komponent arama, şematik sembol (.kicad_sym), "
+                "footprint (.kicad_mod) ve 3D model (.step/.wrl) kütüphane aktarıcı ve fiyatlı BOM yöneticisi."
             )
             self.show_toolbar_button = True
 

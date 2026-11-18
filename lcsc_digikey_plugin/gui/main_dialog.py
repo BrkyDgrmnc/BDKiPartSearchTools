@@ -68,7 +68,7 @@ class MainImporterDialog(wx.Dialog):
     def __init__(self, parent=None, board=None, project_dir: Optional[str] = None):
         super().__init__(
             parent,
-            title="KiCad 10 - LCSC & DigiKey Komponent Kütüphane ve Akıllı BOM Yöneticisi",
+            title="BDPartSearchTools - Komponent Kütüphane ve Akıllı BOM Yöneticisi (by Berkay Değirmenci)",
             size=(1180, 780),
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.MAXIMIZE_BOX | wx.MINIMIZE_BOX,
         )

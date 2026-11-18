@@ -43,10 +43,10 @@ def generate_icons(root_dir: str) -> None:
 
             font_sz = 6 if size <= 24 else 14
             dc.SetFont(wx.Font(font_sz, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
-            dc.SetTextForeground(wx.Colour(255, 255, 255))
-            dc.DrawText("LC", pad + 3, pad + 1)
+            dc.SetTextForeground(wx.Colour(255, 215, 64))
+            dc.DrawText("BD", pad + 3, pad + 1)
             dc.SetTextForeground(wx.Colour(100, 235, 140))
-            dc.DrawText("DK", pad + 3, size // 2)
+            dc.DrawText("PST" if size > 24 else "PS", pad + (1 if size > 24 else 3), size // 2)
 
             dc.SelectObject(wx.NullBitmap)
             os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
