@@ -1,0 +1,52 @@
+{
+  "$schema": "https://go.kicad.org/pcm/schemas/v1",
+  "name": "LCSC & DigiKey Component Importer and Smart BOM",
+  "description": "Import symbols, footprints, and 3D models from LCSC/EasyEDA and DigiKey, and export priced BOMs.",
+  "description_full": "Search and import electronic components from LCSC (EasyEDA) and DigiKey directly into KiCad libraries (.kicad_sym, .kicad_mod, .step, .wrl) with automatic sym-lib-table and fp-lib-table registration.\n\nFeatures:\n- Live 2D Schematic Symbol and PCB Footprint preview before import\n- Automatic category-based or unified library organization (Global or Project scope)\n- Embeds full supplier and engineering metadata (MPN, Manufacturer, LCSC Part #, DigiKey Part #, Unit Price, Stock, Datasheet) into symbols\n- Smart BOM & Live Pricing/Stock manager supporting Engineering CSV, JLCPCB PCBA BOM, and DigiKey Bulk Upload CSV\n- Accessible from both Schematic Editor (Eeschema) and PCB Editor (Pcbnew) in KiCad 9/10.\n- Note: User interface is currently provided in Turkish (English/Turkish toggle included).",
+  "identifier": "com.github.aridrones.lcsc-digikey-importer",
+  "type": "plugin",
+  "author": {
+    "name": "Berkay Degirmenci",
+    "contact": {
+      "email": "berkay.degirmenci@aridrones.com",
+      "web": "https://github.com/aridrones/kicad-lcsc-digikey-plugin"
+    }
+  },
+  "maintainer": {
+    "name": "Berkay Degirmenci",
+    "contact": {
+      "email": "berkay.degirmenci@aridrones.com",
+      "web": "https://github.com/aridrones/kicad-lcsc-digikey-plugin"
+    }
+  },
+  "license": "MIT",
+  "resources": {
+    "homepage": "https://github.com/aridrones/kicad-lcsc-digikey-plugin",
+    "Bug Tracker": "https://github.com/aridrones/kicad-lcsc-digikey-plugin/issues"
+  },
+  "tags": [
+    "lcsc",
+    "digikey",
+    "easyeda",
+    "library",
+    "bom",
+    "3d-model",
+    "footprint",
+    "symbol"
+  ],
+  "keep_on_update": [
+    "^/plugins/.*/data/.*\\.json$"
+  ],
+  "versions": [
+    {
+      "version": "1.0.0",
+      "status": "stable",
+      "kicad_version": "8.0",
+      "platforms": [
+        "windows",
+        "linux",
+        "macos"
+      ]
+    }
+  ]
+}
