@@ -8,7 +8,7 @@ import re
 import json
 import requests
 from typing import Dict, Any, List, Optional, Tuple
-from plugin.config import ConfigManager
+from lcsc_digikey_plugin.config import ConfigManager
 
 
 BROWSER_HEADERS = {

@@ -8,9 +8,9 @@ import os
 import re
 import shutil
 from typing import Dict, Any, Optional, Tuple, List
-from plugin.config import ConfigManager
-from plugin.converters.easyeda_converter import EasyEDA2KiCadConverter
-from plugin.api.lcsc_easyeda_client import LcscEasyEdaClient
+from lcsc_digikey_plugin.config import ConfigManager
+from lcsc_digikey_plugin.converters.easyeda_converter import EasyEDA2KiCadConverter
+from lcsc_digikey_plugin.api.lcsc_easyeda_client import LcscEasyEdaClient
 
 
 class LibraryManager:

@@ -5,9 +5,9 @@ and resolving CAD models (Symbol, Footprint, 3D STEP/WRL) for any component.
 """
 
 from typing import Dict, Any, List, Optional
-from plugin.config import ConfigManager
-from plugin.api.lcsc_easyeda_client import LcscEasyEdaClient
-from plugin.api.digikey_client import DigiKeyClient
+from lcsc_digikey_plugin.config import ConfigManager
+from lcsc_digikey_plugin.api.lcsc_easyeda_client import LcscEasyEdaClient
+from lcsc_digikey_plugin.api.digikey_client import DigiKeyClient
 
 
 class HybridSupplierService:

@@ -10,8 +10,8 @@ import re
 import csv
 import glob
 from typing import Dict, Any, List, Optional, Tuple
-from plugin.config import ConfigManager
-from plugin.api.hybrid_service import HybridSupplierService
+from lcsc_digikey_plugin.config import ConfigManager
+from lcsc_digikey_plugin.api.hybrid_service import HybridSupplierService
 
 
 class BomManager:

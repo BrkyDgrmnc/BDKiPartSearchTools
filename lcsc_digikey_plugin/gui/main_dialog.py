@@ -8,12 +8,12 @@ import webbrowser
 import wx
 from typing import Dict, Any, List, Optional
 
-from plugin.config import ConfigManager, DEFAULT_CATEGORIES
-from plugin.api.hybrid_service import HybridSupplierService
-from plugin.converters.easyeda_converter import EasyEDA2KiCadConverter
-from plugin.library.library_manager import LibraryManager
-from plugin.bom.bom_manager import BomManager
-from plugin.gui.preview_canvas import SymbolPreviewCanvas, FootprintPreviewCanvas
+from lcsc_digikey_plugin.config import ConfigManager, DEFAULT_CATEGORIES
+from lcsc_digikey_plugin.api.hybrid_service import HybridSupplierService
+from lcsc_digikey_plugin.converters.easyeda_converter import EasyEDA2KiCadConverter
+from lcsc_digikey_plugin.library.library_manager import LibraryManager
+from lcsc_digikey_plugin.bom.bom_manager import BomManager
+from lcsc_digikey_plugin.gui.preview_canvas import SymbolPreviewCanvas, FootprintPreviewCanvas
 
 
 class BomRowEditDialog(wx.Dialog):

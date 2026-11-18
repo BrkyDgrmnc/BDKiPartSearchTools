@@ -2,7 +2,7 @@
 Official KiCad PCM Addon Package Builder & Validator
 Follows all rules from https://dev-docs.kicad.org/en/addons/:
 1. Generates 64x64 resources/icon.png (PCM icon) and 24x24 icon.png (ActionPlugin/IPC toolbar icon)
-2. Validates metadata.json and plugin.json against official KiCad rules and schemas
+2. Validates metadata.json and plugin.json against official KiCad rules, schemas, and C++ regexes
 3. Packages ISO 21320-1 ZIP archive with exact structure:
      |- plugins/
      |- resources/icon.png
@@ -62,27 +62,25 @@ def generate_icons(root_dir: str) -> None:
 
 
 def validate_official_rules(meta: dict, plugin_meta: dict) -> None:
-    # 1. Identifier rule: reverse-DNS, alphanumeric + dots + dashes only, length 2..50
     ident = meta.get("identifier", "")
     assert 2 <= len(ident) <= 50, f"Identifier length must be 2..50 chars (got {len(ident)})"
     assert re.match(r"^[a-zA-Z][-a-zA-Z0-9.]{0,98}[a-zA-Z0-9]$", ident), f"Invalid PCM identifier: {ident}"
-    assert "_" not in ident, "PCM identifier must not contain underscores (_); use dashes (-)"
-    assert ident.count(".") >= 2, "Identifier must be reverse-DNS namespaced (e.g. com.github.user.pkg)"
+    assert "_" not in ident, "PCM identifier must not contain underscores (_)"
+    # Also verify kicommon.dll C++ IPC plugin identifier regex: [\w\d]{2,}\.[\w\d]+\.[\w\d]+
+    assert re.fullmatch(r"[\w\d]{2,}\.[\w\d]+\.[\w\d]+", plugin_meta.get("identifier", "")), (
+        f"plugin.json identifier '{plugin_meta.get('identifier')}' must match C++ regex [\\w\\d]{{2,}}\\.[\\w\\d]+\\.[\\w\\d]+"
+    )
 
-    # 2. Short description <= 150 chars
     desc = meta.get("description", "")
     assert 1 <= len(desc) <= 150, f"Short description must be <= 150 chars (got {len(desc)})"
 
-    # 3. Validate tags against ^[a-z][-a-z0-9]{0,48}[a-z0-9]$
     for t in meta.get("tags", []):
         assert re.match(r"^[a-z][-a-z0-9]{0,48}[a-z0-9]$", t), f"Tag '{t}' does not match ^[a-z][-a-z0-9]{{0,48}}[a-z0-9]$"
 
-    # 4. No download_* keys inside archive metadata.json
     for v in meta.get("versions", []):
         for forbidden in ("download_url", "download_sha256", "download_size", "install_size"):
             assert forbidden not in v, f"Archive metadata.json must NOT contain {forbidden}"
 
-    # 5. Validate plugin.json
     assert plugin_meta.get("identifier") == ident, "plugin.json identifier must match metadata.json identifier"
     print("[OK] Official KiCad PCM & IPC API rules verified!")
 
@@ -92,13 +90,13 @@ def collect_plugin_files(root_dir: str) -> List[Tuple[str, str]]:
     Returns list of (abs_file_path, zip_arcname) for files belonging inside `plugins/`.
     """
     entries: List[Tuple[str, str]] = []
-    top_files = ["__init__.py", "plugin.json", "icon.png", "run_standalone.py"]
+    top_files = ["__init__.py", "plugin.json", "icon.png", "run_standalone.py", "requirements.txt"]
     for tf in top_files:
         full = os.path.join(root_dir, tf)
         if os.path.exists(full):
             entries.append((full, f"plugins/{tf}"))
 
-    pkg_dir = os.path.join(root_dir, "plugin")
+    pkg_dir = os.path.join(root_dir, "lcsc_digikey_plugin")
     for dirpath, dirnames, filenames in os.walk(pkg_dir):
         dirnames[:] = [d for d in dirnames if d != "__pycache__" and not d.startswith(".")]
         for fn in filenames:
@@ -138,16 +136,13 @@ def build_package() -> str:
 
     install_size = 0
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-        # 1. metadata.json at archive root
         zf.write(meta_path, "metadata.json")
         install_size += os.path.getsize(meta_path)
 
-        # 2. resources/icon.png (64x64)
         if os.path.exists(pcm_icon_path):
             zf.write(pcm_icon_path, "resources/icon.png")
             install_size += os.path.getsize(pcm_icon_path)
 
-        # 3. plugins/...
         for full_path, arcname in plugin_entries:
             zf.write(full_path, arcname)
             install_size += os.path.getsize(full_path)
@@ -155,7 +150,6 @@ def build_package() -> str:
     download_size = os.path.getsize(zip_path)
     sha256_hash = hashlib.sha256(open(zip_path, "rb").read()).hexdigest()
 
-    # Create submission metadata.json (for https://gitlab.com/kicad/addons/metadata)
     submission_meta = json.loads(json.dumps(meta))
     submission_meta["versions"][0].update({
         "download_url": f"https://github.com/aridrones/kicad-lcsc-digikey-plugin/releases/download/v{ver}/{zip_filename}",

@@ -1,6 +1,6 @@
 {
   "$schema": "https://go.kicad.org/api/schemas/v1",
-  "identifier": "com.github.aridrones.lcsc-digikey-importer",
+  "identifier": "com.aridrones.lcscdigikeyimporter",
   "name": "LCSC & DigiKey Component Importer and Smart BOM",
   "description": "Search and import symbols, footprints, and 3D models from LCSC/EasyEDA and DigiKey, and export priced BOMs.",
   "runtime": {
@@ -9,7 +9,7 @@
   },
   "actions": [
     {
-      "identifier": "open-importer",
+      "identifier": "open_importer",
       "name": "LCSC & DigiKey Importer / BOM",
       "description": "Import components from LCSC & DigiKey and generate priced Engineering BOM",
       "show-button": true,

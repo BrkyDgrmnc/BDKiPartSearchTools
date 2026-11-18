@@ -11,7 +11,7 @@ if plugin_dir not in sys.path:
     sys.path.insert(0, plugin_dir)
 
 import wx
-from plugin.gui.main_dialog import MainImporterDialog
+from lcsc_digikey_plugin.gui.main_dialog import MainImporterDialog
 
 
 def main():

@@ -1,7 +1,6 @@
 """
 KiCad 10 Installer Script for LCSC & DigiKey Component Importer & Smart BOM
-Follows official PCM directory naming (dots replaced with underscores:
-com_github_aridrones_lcsc-digikey-importer)
+Cleans up duplicate plugin copies and installs into 3rdparty/plugins/com_aridrones_lcscdigikeyimporter
 """
 
 import os
@@ -14,34 +13,35 @@ def install():
     src = os.path.dirname(os.path.abspath(__file__))
     build_package()
 
-    # Remove old local test folder if present
-    for old_dir in [
+    # Remove all old/duplicate plugin folders so KiCad never has duplicate identifier conflicts
+    old_dirs = [
         os.path.expandvars(r"%USERPROFILE%\Documents\KiCad\10.0\plugins\com_ari_lcsc_digikey_importer"),
         os.path.expandvars(r"%USERPROFILE%\Documents\KiCad\10.0\3rdparty\plugins\com_ari_lcsc_digikey_importer"),
-    ]:
+        os.path.expandvars(r"%USERPROFILE%\Documents\KiCad\10.0\plugins\com_github_aridrones_lcsc-digikey-importer"),
+        os.path.expandvars(r"%USERPROFILE%\Documents\KiCad\10.0\3rdparty\plugins\com_github_aridrones_lcsc-digikey-importer"),
+        os.path.expandvars(r"%USERPROFILE%\Documents\KiCad\10.0\scripting\plugins\kicad-lcsc-digikey-plugin"),
+    ]
+    for old_dir in old_dirs:
         if os.path.exists(old_dir):
             shutil.rmtree(old_dir, ignore_errors=True)
 
-    # Official PCM extracted directory name: dots replaced with underscores
-    pcm_pkg_folder = "com_github_aridrones_lcsc-digikey-importer"
-    targets = [
-        os.path.expandvars(rf"%USERPROFILE%\Documents\KiCad\10.0\3rdparty\plugins\{pcm_pkg_folder}"),
-        os.path.expandvars(rf"%USERPROFILE%\Documents\KiCad\10.0\plugins\{pcm_pkg_folder}"),
-    ]
-
-    for t in targets:
-        if os.path.exists(t):
-            shutil.rmtree(t)
-        shutil.copytree(
-            src,
-            t,
-            ignore=shutil.ignore_patterns("dist", "__pycache__", "*.pyc", ".git"),
-        )
-        print("Installed to:", t)
+    pcm_pkg_folder = "com_aridrones_lcscdigikeyimporter"
+    target = os.path.expandvars(rf"%USERPROFILE%\Documents\KiCad\10.0\3rdparty\plugins\{pcm_pkg_folder}")
+    if os.path.exists(target):
+        shutil.rmtree(target)
+    shutil.copytree(
+        src,
+        target,
+        ignore=shutil.ignore_patterns("dist", "__pycache__", "*.pyc", ".git"),
+    )
+    print("Installed to:", target)
 
     # Register in eeschema.json and pcbnew.json
-    action_key = "com.github.aridrones.lcsc-digikey-importer.open-importer"
-    old_key = "com.ari.lcsc_digikey_importer.open_importer"
+    action_key = "com.aridrones.lcscdigikeyimporter.open_importer"
+    old_keys = {
+        "com.ari.lcsc_digikey_importer.open_importer",
+        "com.github.aridrones.lcsc-digikey-importer.open-importer",
+    }
 
     for cfg_name in ("eeschema.json", "pcbnew.json"):
         cfg_path = os.path.expandvars(rf"%APPDATA%\kicad\10.0\{cfg_name}")
@@ -52,15 +52,29 @@ def install():
 
         plugins_sec = cfg.setdefault("plugins", {})
         actions_list = plugins_sec.setdefault("actions", [])
-        actions_list = [a for a in actions_list if not (isinstance(a, dict) and old_key in a)]
+        actions_list = [
+            a for a in actions_list
+            if not (isinstance(a, dict) and any(k in a for k in old_keys))
+        ]
         if not any(isinstance(a, dict) and action_key in a for a in actions_list):
             actions_list.append({action_key: True})
         plugins_sec["actions"] = actions_list
 
+        if cfg_name == "pcbnew.json":
+            # Also ensure ActionPlugin button visibility in pcbnew.json action_plugins
+            ap_list = cfg.setdefault("action_plugins", [])
+            ap_name = "LCSC & DigiKey Kütüphane ve BOM Yöneticisi"
+            if not any(isinstance(x, dict) and x.get("name") == ap_name for x in ap_list):
+                ap_list.append({
+                    "name": ap_name,
+                    "path": os.path.join(target, "__init__.py").replace("\\", "/"),
+                    "visible": True,
+                })
+
         if cfg_name == "eeschema.json":
             bom_sec = cfg.setdefault("bom", {})
             bom_plugins = bom_sec.setdefault("plugins", [])
-            runner_path = os.path.join(targets[0], "run_standalone.py").replace("\\", "/")
+            runner_path = os.path.join(target, "run_standalone.py").replace("\\", "/")
             bom_cmd = f'"E:\\KiCad\\bin\\pythonw.exe" "{runner_path}" "%I"'
             bom_name = "LCSC_DigiKey_Kutuphane_ve_Fiyatli_BOM"
             bom_plugins = [p for p in bom_plugins if p.get("name") != bom_name]

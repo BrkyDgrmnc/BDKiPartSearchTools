@@ -7,7 +7,7 @@ import os
 try:
     import pcbnew
     import wx
-    from plugin.gui.main_dialog import MainImporterDialog
+    from lcsc_digikey_plugin.gui.main_dialog import MainImporterDialog
 
     class LcscDigiKeyImporterActionPlugin(pcbnew.ActionPlugin):
         def defaults(self):
@@ -24,6 +24,7 @@ try:
             icon_path = os.path.join(base_dir, "icon.png")
             if os.path.exists(icon_path):
                 self.icon_file_name = icon_path
+                self.dark_icon_file_name = icon_path
 
         def Run(self):
             board = pcbnew.GetBoard()

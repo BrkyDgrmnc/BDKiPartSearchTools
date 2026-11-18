@@ -8,7 +8,7 @@ import time
 import urllib.parse
 import requests
 from typing import Dict, Any, List, Optional
-from plugin.config import ConfigManager
+from lcsc_digikey_plugin.config import ConfigManager
 
 
 class DigiKeyClient:
