@@ -30,11 +30,11 @@ def install():
 
     pcm_pkg_folder = "com_berkaydegirmenci_bdkipartsearchtools"
     target = os.path.expandvars(rf"%USERPROFILE%\Documents\KiCad\10.0\3rdparty\plugins\{pcm_pkg_folder}")
-    if os.path.exists(target):
-        shutil.rmtree(target)
+    os.makedirs(target, exist_ok=True)
     shutil.copytree(
         src,
         target,
+        dirs_exist_ok=True,
         ignore=shutil.ignore_patterns("dist", "__pycache__", "*.pyc", ".git"),
     )
     print("Installed to:", target)
