@@ -8,7 +8,7 @@ import os
 import re
 import shutil
 from typing import Dict, Any, Optional, Tuple, List
-from lcsc_digikey_plugin.config import ConfigManager
+from lcsc_digikey_plugin.config import ConfigManager, DEFAULT_CATEGORIES
 from lcsc_digikey_plugin.converters.easyeda_converter import EasyEDA2KiCadConverter
 from lcsc_digikey_plugin.api.lcsc_easyeda_client import LcscEasyEdaClient
 
@@ -20,6 +20,56 @@ class LibraryManager:
         self.config = config
         self.converter = EasyEDA2KiCadConverter()
         self.lcsc_client = lcsc_client or LcscEasyEdaClient()
+        try:
+            if self.config.settings.get("auto_register_lib_tables", True):
+                self.ensure_all_category_libraries_initialized()
+        except Exception as e:
+            print(f"[LibraryManager] Pre-init category libraries warning: {e}")
+
+    def ensure_all_category_libraries_initialized(self) -> None:
+        """
+        Pre-creates all 14 category .kicad_sym files and .pretty directories and registers
+        them in KiCad's global sym-lib-table and fp-lib-table upfront so KiCad loads all
+        category libraries at startup without requiring mid-session table additions.
+        """
+        base_dir, _ = self.resolve_base_dir(None)
+        symbols_dir = os.path.join(base_dir, "symbols")
+        footprints_dir = os.path.join(base_dir, "footprints")
+        models_dir = os.path.join(base_dir, "3dmodels")
+
+        os.makedirs(symbols_dir, exist_ok=True)
+        os.makedirs(footprints_dir, exist_ok=True)
+        os.makedirs(models_dir, exist_ok=True)
+
+        categories = DEFAULT_CATEGORIES if self.config.settings.get("organize_by_category", True) else ["Custom_Components"]
+        for cat in categories:
+            lib_name = self.get_library_name_for_category(cat)
+            sym_file_path = os.path.join(symbols_dir, f"{lib_name}.kicad_sym")
+            pretty_dir_path = os.path.join(footprints_dir, f"{lib_name}.pretty")
+            shapes3d_dir_path = os.path.join(models_dir, f"{lib_name}.3dshapes")
+
+            os.makedirs(pretty_dir_path, exist_ok=True)
+            os.makedirs(shapes3d_dir_path, exist_ok=True)
+
+            if not os.path.exists(sym_file_path) or os.path.getsize(sym_file_path) < 20:
+                empty_lib = (
+                    "(kicad_symbol_lib\n"
+                    "\t(version 20241209)\n"
+                    '\t(generator "kicad_symbol_editor")\n'
+                    '\t(generator_version "9.0")\n'
+                    ")\n"
+                )
+                with open(sym_file_path, "w", encoding="utf-8") as f:
+                    f.write(empty_lib)
+
+            self.register_libraries_in_tables(
+                lib_name=lib_name,
+                sym_file_path=sym_file_path,
+                pretty_dir_path=pretty_dir_path,
+                is_project_scope=False,
+                project_dir=None,
+                category=cat,
+            )
 
     def resolve_base_dir(self, project_dir: Optional[str] = None) -> Tuple[str, bool]:
         """
@@ -168,7 +218,7 @@ class LibraryManager:
             overwrite=self.config.settings.get("overwrite_existing_symbol", True),
         )
 
-        # 4. Register in sym-lib-table and fp-lib-table
+        # 4. Register in sym-lib-table and fp-lib-table (Global + Project if project has local tables)
         sym_table_updated = False
         fp_table_updated = False
         if self.config.settings.get("auto_register_lib_tables", True):
@@ -180,6 +230,31 @@ class LibraryManager:
                 project_dir=project_dir,
                 category=category,
             )
+            # Also register in project's local sym-lib-table / fp-lib-table if present
+            if not is_project_scope and project_dir and os.path.isdir(project_dir):
+                proj_sym_tbl = os.path.join(project_dir, "sym-lib-table")
+                proj_fp_tbl = os.path.join(project_dir, "fp-lib-table")
+                if os.path.exists(proj_sym_tbl):
+                    self._ensure_lib_table_entry(
+                        proj_sym_tbl, "sym_lib_table", lib_name, sym_file_path.replace("\\", "/"), f"BDKiPartSearchTools ({category})"
+                    )
+                if os.path.exists(proj_fp_tbl):
+                    self._ensure_lib_table_entry(
+                        proj_fp_tbl, "fp_lib_table", lib_name, pretty_dir_path.replace("\\", "/"), f"BDKiPartSearchTools ({category})"
+                    )
+
+        # Also mirror symbol into existing EasyEDA.kicad_sym if present on user's machine so pre-existing EasyEDA library has it immediately
+        easyeda_sym_path = os.path.join(os.path.expanduser("~"), "KiCad", "EasyEDA.kicad_sym")
+        if os.path.exists(easyeda_sym_path):
+            try:
+                self._upsert_symbol_in_library(
+                    sym_file_path=easyeda_sym_path,
+                    symbol_name=mpn,
+                    symbol_block=sym_block,
+                    overwrite=True,
+                )
+            except Exception:
+                pass
 
         # 5. Save component metadata in local database for fast BOM enrichment
         part_record = dict(part_info)
@@ -211,9 +286,9 @@ class LibraryManager:
         if not os.path.exists(sym_file_path) or os.path.getsize(sym_file_path) < 20:
             content = (
                 "(kicad_symbol_lib\n"
-                "\t(version 20231120)\n"
-                '\t(generator "kicad_lcsc_digikey_importer")\n'
-                '\t(generator_version "10.0")\n'
+                "\t(version 20241209)\n"
+                '\t(generator "kicad_symbol_editor")\n'
+                '\t(generator_version "9.0")\n'
                 f"{symbol_block}\n"
                 ")\n"
             )

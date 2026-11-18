@@ -100,6 +100,14 @@ def install():
             json.dump(cfg, f, indent=2, ensure_ascii=False)
         print(f"Updated {cfg_name} with BDKiPartSearchTools identifier!")
 
+    # Pre-initialize and register all 14 category libraries in sym-lib-table and fp-lib-table
+    from lcsc_digikey_plugin.config import ConfigManager
+    from lcsc_digikey_plugin.library.library_manager import LibraryManager
+    cfg_mgr = ConfigManager()
+    lib_mgr = LibraryManager(cfg_mgr)
+    lib_mgr.ensure_all_category_libraries_initialized()
+    print("Pre-registered all 14 ARI_* category libraries in sym-lib-table and fp-lib-table!")
+
 
 if __name__ == "__main__":
     install()

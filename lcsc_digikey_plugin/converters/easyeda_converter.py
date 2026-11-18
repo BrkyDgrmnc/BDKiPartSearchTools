@@ -48,6 +48,7 @@ class EasyEDA2KiCadConverter:
     @staticmethod
     def escape_sexpr_str(val: Any) -> str:
         s = str(val if val is not None else "")
+        s = s.replace("\u2103", "degC").replace("\u2109", "degF")
         s = s.replace("\\", "\\\\").replace('"', '\\"').replace("\n", " ").replace("\r", "")
         return s
 
@@ -429,6 +430,7 @@ class EasyEDA2KiCadConverter:
                 "\t\t\t)",
             ])
         lines.append("\t\t)")
+        lines.append("\t\t(embedded_fonts no)")
         lines.append("\t)")
         return "\n".join(lines)
 
