@@ -11,10 +11,10 @@ try:
 
     class LcscDigiKeyImporterActionPlugin(pcbnew.ActionPlugin):
         def defaults(self):
-            self.name = "BDPartSearchTools"
+            self.name = "BDKiPartSearchTools"
             self.category = "Library & BOM Tools"
             self.description = (
-                "BDPartSearchTools (by Berkay Değirmenci) - Komponent arama, şematik sembol (.kicad_sym), "
+                "BDKiPartSearchTools (by Berkay Değirmenci) - Komponent arama, şematik sembol (.kicad_sym), "
                 "footprint (.kicad_mod) ve 3D model (.step/.wrl) kütüphane aktarıcı ve fiyatlı BOM yöneticisi."
             )
             self.show_toolbar_button = True

@@ -21,13 +21,14 @@ def install():
         os.path.expandvars(r"%USERPROFILE%\Documents\KiCad\10.0\3rdparty\plugins\com_github_aridrones_lcsc-digikey-importer"),
         os.path.expandvars(r"%USERPROFILE%\Documents\KiCad\10.0\plugins\com_aridrones_lcscdigikeyimporter"),
         os.path.expandvars(r"%USERPROFILE%\Documents\KiCad\10.0\3rdparty\plugins\com_aridrones_lcscdigikeyimporter"),
+        os.path.expandvars(r"%USERPROFILE%\Documents\KiCad\10.0\3rdparty\plugins\com_berkaydegirmenci_bdpartsearchtools"),
         os.path.expandvars(r"%USERPROFILE%\Documents\KiCad\10.0\scripting\plugins\kicad-lcsc-digikey-plugin"),
     ]
     for old_dir in old_dirs:
         if os.path.exists(old_dir):
             shutil.rmtree(old_dir, ignore_errors=True)
 
-    pcm_pkg_folder = "com_berkaydegirmenci_bdpartsearchtools"
+    pcm_pkg_folder = "com_berkaydegirmenci_bdkipartsearchtools"
     target = os.path.expandvars(rf"%USERPROFILE%\Documents\KiCad\10.0\3rdparty\plugins\{pcm_pkg_folder}")
     if os.path.exists(target):
         shutil.rmtree(target)
@@ -39,11 +40,12 @@ def install():
     print("Installed to:", target)
 
     # Register in eeschema.json and pcbnew.json
-    action_key = "com.berkaydegirmenci.bdpartsearchtools.open_bdpartsearchtools"
+    action_key = "com.berkaydegirmenci.bdkipartsearchtools.open_bdkipartsearchtools"
     old_keys = {
         "com.ari.lcsc_digikey_importer.open_importer",
         "com.github.aridrones.lcsc-digikey-importer.open-importer",
         "com.aridrones.lcscdigikeyimporter.open_importer",
+        "com.berkaydegirmenci.bdpartsearchtools.open_bdpartsearchtools",
     }
 
     for cfg_name in ("eeschema.json", "pcbnew.json"):
@@ -67,10 +69,10 @@ def install():
             ap_list = cfg.setdefault("action_plugins", [])
             ap_list = [
                 x for x in ap_list
-                if not (isinstance(x, dict) and x.get("name") in ("LCSC & DigiKey Kütüphane ve BOM Yöneticisi", "BDPartSearchTools"))
+                if not (isinstance(x, dict) and x.get("name") in ("LCSC & DigiKey Kütüphane ve BOM Yöneticisi", "BDPartSearchTools", "BDKiPartSearchTools"))
             ]
             ap_list.append({
-                "name": "BDPartSearchTools",
+                "name": "BDKiPartSearchTools",
                 "path": os.path.join(target, "__init__.py").replace("\\", "/"),
                 "visible": True,
             })
@@ -81,10 +83,10 @@ def install():
             bom_plugins = bom_sec.setdefault("plugins", [])
             runner_path = os.path.join(target, "run_standalone.py").replace("\\", "/")
             bom_cmd = f'"E:\\KiCad\\bin\\pythonw.exe" "{runner_path}" "%I"'
-            bom_name = "BDPartSearchTools"
+            bom_name = "BDKiPartSearchTools"
             bom_plugins = [
                 p for p in bom_plugins
-                if p.get("name") not in ("LCSC_DigiKey_Kutuphane_ve_Fiyatli_BOM", "BDPartSearchTools")
+                if p.get("name") not in ("LCSC_DigiKey_Kutuphane_ve_Fiyatli_BOM", "BDPartSearchTools", "BDKiPartSearchTools")
             ]
             bom_plugins.append({
                 "command": bom_cmd,
@@ -96,7 +98,7 @@ def install():
 
         with open(cfg_path, "w", encoding="utf-8") as f:
             json.dump(cfg, f, indent=2, ensure_ascii=False)
-        print(f"Updated {cfg_name} with BDPartSearchTools identifier!")
+        print(f"Updated {cfg_name} with BDKiPartSearchTools identifier!")
 
 
 if __name__ == "__main__":

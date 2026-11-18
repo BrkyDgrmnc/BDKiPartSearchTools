@@ -1,28 +1,28 @@
 {
   "$schema": "https://go.kicad.org/pcm/schemas/v1",
-  "name": "BDPartSearchTools",
+  "name": "BDKiPartSearchTools",
   "description": "Component search, symbol/footprint/3D model library importer, and smart priced BOM tool by Berkay Degirmenci.",
-  "description_full": "BDPartSearchTools (by Berkay Degirmenci) allows you to search electronic components from online suppliers (LCSC/EasyEDA, DigiKey, etc.) and import them directly into KiCad libraries (.kicad_sym, .kicad_mod, .step, .wrl) with automatic sym-lib-table and fp-lib-table registration.\n\nFeatures:\n- Live 2D Schematic Symbol and PCB Footprint preview before import\n- Automatic category-based or unified library organization (Global or Project scope)\n- Embeds full supplier and engineering metadata (MPN, Manufacturer, Supplier Part #, Unit Price, Stock, Datasheet) into symbols\n- Smart BOM & Live Pricing/Stock manager supporting Engineering CSV, JLCPCB PCBA BOM, and DigiKey Bulk Upload CSV\n- Accessible from both Schematic Editor (Eeschema) and PCB Editor (Pcbnew) in KiCad 9/10.\n- Note: User interface is currently provided in Turkish.",
-  "identifier": "com.berkaydegirmenci.bdpartsearchtools",
+  "description_full": "BDKiPartSearchTools (by Berkay Degirmenci) allows you to search electronic components from online suppliers (LCSC/EasyEDA, DigiKey, etc.) and import them directly into KiCad libraries (.kicad_sym, .kicad_mod, .step, .wrl) with automatic sym-lib-table and fp-lib-table registration.\n\nFeatures:\n- Live 2D Schematic Symbol and PCB Footprint preview before import\n- Automatic category-based or unified library organization (Global or Project scope)\n- Embeds full supplier and engineering metadata (MPN, Manufacturer, Supplier Part #, Unit Price, Stock, Datasheet) into symbols\n- Smart BOM & Live Pricing/Stock manager supporting Engineering CSV, JLCPCB PCBA BOM, and DigiKey Bulk Upload CSV\n- Accessible from both Schematic Editor (Eeschema) and PCB Editor (Pcbnew) in KiCad 9/10.\n- Note: User interface is currently provided in Turkish.",
+  "identifier": "com.berkaydegirmenci.bdkipartsearchtools",
   "type": "plugin",
   "author": {
     "name": "Berkay Degirmenci",
     "contact": {
       "email": "berkay.degirmenci@aridrones.com",
-      "web": "https://github.com/berkaydegirmenci/BDPartSearchTools"
+      "web": "https://github.com/berkaydegirmenci/BDKiPartSearchTools"
     }
   },
   "maintainer": {
     "name": "Berkay Degirmenci",
     "contact": {
       "email": "berkay.degirmenci@aridrones.com",
-      "web": "https://github.com/berkaydegirmenci/BDPartSearchTools"
+      "web": "https://github.com/berkaydegirmenci/BDKiPartSearchTools"
     }
   },
   "license": "MIT",
   "resources": {
-    "homepage": "https://github.com/berkaydegirmenci/BDPartSearchTools",
-    "Bug Tracker": "https://github.com/berkaydegirmenci/BDPartSearchTools/issues"
+    "homepage": "https://github.com/berkaydegirmenci/BDKiPartSearchTools",
+    "Bug Tracker": "https://github.com/berkaydegirmenci/BDKiPartSearchTools/issues"
   },
   "tags": [
     "search",
