@@ -1,0 +1,17 @@
+# Python bytecode & caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# User runtime settings & local component cache
+data/*.json
+
+# Build artifacts & PCM zip distributions
+dist/
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.bak
