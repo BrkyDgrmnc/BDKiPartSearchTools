@@ -455,10 +455,11 @@ class MainImporterDialog(wx.Dialog):
             self.choice_category.SetStringSelection(cat)
         self._update_target_lib_label()
 
+        clean_pkg = self.library_manager._clean_footprint_name(str(part.get("package") or ""))
         self.txt_sym_name.SetValue(str(part.get("mpn") or part.get("lcsc_part") or ""))
         self.txt_ref_prefix.SetValue(ConfigManager.get_reference_prefix(cat))
-        self.txt_fp_name.SetValue(str(part.get("package") or ""))
-        self.txt_pkg.SetValue(str(part.get("package") or ""))
+        self.txt_fp_name.SetValue(clean_pkg)
+        self.txt_pkg.SetValue(clean_pkg)
         self.txt_lcsc_code.SetValue(str(part.get("lcsc_part") or ""))
         self.txt_dk_code.SetValue(str(part.get("digikey_part") or ""))
         try:
@@ -499,7 +500,7 @@ class MainImporterDialog(wx.Dialog):
             meta = cad.get("metadata", {})
             if meta.get("prefix"):
                 self.txt_ref_prefix.SetValue(meta["prefix"])
-            if cad.get("footprint_name"):
+            if not self.txt_fp_name.GetValue().strip() and cad.get("footprint_name"):
                 self.txt_fp_name.SetValue(cad["footprint_name"])
             if not self.txt_lcsc_code.GetValue().strip() and cad.get("lcsc_part"):
                 self.txt_lcsc_code.SetValue(cad["lcsc_part"])

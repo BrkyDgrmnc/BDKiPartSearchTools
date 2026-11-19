@@ -41,6 +41,21 @@ class LibraryManager:
         os.makedirs(footprints_dir, exist_ok=True)
         os.makedirs(models_dir, exist_ok=True)
 
+        # Clean legacy EasyEDA / LC_DK_Library entries from global tables
+        table_dir = self.config.settings.get("kicad_config_dir") or self.config._get_kicad_config_dir()
+        for tbl_name in ("sym-lib-table", "fp-lib-table"):
+            tbl_path = os.path.join(table_dir, tbl_name)
+            if os.path.exists(tbl_path):
+                try:
+                    with open(tbl_path, "r", encoding="utf-8") as f:
+                        lines = f.readlines()
+                    cleaned = [ln for ln in lines if "LC_DK_Library" not in ln and '(name "EasyEDA")' not in ln]
+                    if len(cleaned) != len(lines):
+                        with open(tbl_path, "w", encoding="utf-8") as f:
+                            f.writelines(cleaned)
+                except Exception:
+                    pass
+
         categories = DEFAULT_CATEGORIES if self.config.settings.get("organize_by_category", True) else ["Custom_Components"]
         for cat in categories:
             lib_name = self.get_library_name_for_category(cat)
@@ -120,10 +135,10 @@ class LibraryManager:
         os.makedirs(shapes3d_dir_path, exist_ok=True)
 
         mpn = self._sanitize_identifier(part_info.get("mpn") or cad_data.get("title") or part_info.get("lcsc_part") or "Part")
-        fp_name = self._sanitize_identifier(
+        fp_name = self._clean_footprint_name(
             part_info.get("footprint_name")
-            or cad_data.get("footprint_name")
             or part_info.get("package")
+            or cad_data.get("footprint_name")
             or f"{mpn}_FP"
         )
         fp_file_path = os.path.join(pretty_dir_path, f"{fp_name}.kicad_mod")
@@ -242,19 +257,6 @@ class LibraryManager:
                     self._ensure_lib_table_entry(
                         proj_fp_tbl, "fp_lib_table", lib_name, pretty_dir_path.replace("\\", "/"), f"BDKiPartSearchTools ({category})"
                     )
-
-        # Also mirror symbol into existing EasyEDA.kicad_sym if present on user's machine so pre-existing EasyEDA library has it immediately
-        easyeda_sym_path = os.path.join(os.path.expanduser("~"), "KiCad", "EasyEDA.kicad_sym")
-        if os.path.exists(easyeda_sym_path):
-            try:
-                self._upsert_symbol_in_library(
-                    sym_file_path=easyeda_sym_path,
-                    symbol_name=mpn,
-                    symbol_block=sym_block,
-                    overwrite=True,
-                )
-            except Exception:
-                pass
 
         # 5. Save component metadata in local database for fast BOM enrichment
         part_record = dict(part_info)
@@ -442,3 +444,12 @@ class LibraryManager:
         clean = re.sub(r'[\\/:*?"<>|\s]+', "_", (name or "").strip())
         clean = re.sub(r"_+", "_", clean).strip("_")
         return clean or "Component"
+
+    @staticmethod
+    def _clean_footprint_name(name: str) -> str:
+        s = (name or "").strip()
+        s = re.sub(r"_L\d+(?:\.\d+)?-W\d+(?:\.\d+)?.*$", "", s, flags=re.IGNORECASE)
+        s = re.sub(r"\(\d+(?:\.\d+)?x\d+(?:\.\d+)?(?:mm)?\)", "", s, flags=re.IGNORECASE)
+        clean = re.sub(r'[\\/:*?"<>|\s()]+', "_", s)
+        clean = re.sub(r"_+", "_", clean).strip("_-")
+        return clean or "Footprint"

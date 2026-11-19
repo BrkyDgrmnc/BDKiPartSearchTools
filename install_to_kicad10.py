@@ -110,7 +110,10 @@ def install():
         if os.path.exists(tbl_path):
             with open(tbl_path, "r", encoding="utf-8") as f:
                 lines = f.readlines()
-            cleaned = [ln for ln in lines if "LC_DK_Library" not in ln]
+            cleaned = [
+                ln for ln in lines
+                if "LC_DK_Library" not in ln and '(name "EasyEDA")' not in ln
+            ]
             if len(cleaned) != len(lines):
                 with open(tbl_path, "w", encoding="utf-8") as f:
                     f.writelines(cleaned)

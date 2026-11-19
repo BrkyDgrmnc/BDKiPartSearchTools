@@ -274,7 +274,7 @@ class LcscEasyEdaClient:
                 "description": result.get("description") or "",
                 "symbol_data": data_str,
                 "footprint_data": pkg_data_str,
-                "footprint_name": self._sanitize_name(package_name or f"{mpn}_FP"),
+                "footprint_name": self._clean_footprint_name(package_name or f"{mpn}_FP"),
                 "model_3d": model_3d_info,
                 "metadata": {
                     "lcsc_part": lcsc_id,
@@ -456,3 +456,12 @@ class LcscEasyEdaClient:
         clean = re.sub(r'[\\/:*?"<>|\s]+', "_", (name or "").strip())
         clean = re.sub(r"_+", "_", clean).strip("_")
         return clean or "Component"
+
+    @staticmethod
+    def _clean_footprint_name(name: str) -> str:
+        s = (name or "").strip()
+        s = re.sub(r"_L\d+(?:\.\d+)?-W\d+(?:\.\d+)?.*$", "", s, flags=re.IGNORECASE)
+        s = re.sub(r"\(\d+(?:\.\d+)?x\d+(?:\.\d+)?(?:mm)?\)", "", s, flags=re.IGNORECASE)
+        clean = re.sub(r'[\\/:*?"<>|\s()]+', "_", s)
+        clean = re.sub(r"_+", "_", clean).strip("_-")
+        return clean or "Footprint"
