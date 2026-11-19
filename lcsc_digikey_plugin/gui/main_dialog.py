@@ -431,7 +431,11 @@ class MainImporterDialog(wx.Dialog):
                 self.list_results.SetItem(idx, 8, str(item.get("stock", 0)))
                 self.list_results.SetItem(idx, 9, str(item.get("description", "")))
 
-            self._set_busy(False, f"'{query}' için {len(self.search_results)} sonuç bulundu.")
+            dk_err = self.supplier_service.digikey.last_error
+            if not self.search_results and dk_err:
+                self._set_busy(False, dk_err)
+            else:
+                self._set_busy(False, f"'{query}' için {len(self.search_results)} sonuç bulundu.")
             if self.search_results:
                 self.list_results.Select(0)
             else:
@@ -938,12 +942,9 @@ class MainImporterDialog(wx.Dialog):
             wx.MessageBox("Lütfen önce DigiKey Client ID ve Client Secret alanlarını doldurun.", "Uyarı", wx.OK | wx.ICON_WARNING)
             return
 
-        token = self.supplier_service.digikey._get_token()
-        if token:
-            wx.MessageBox("✅ DigiKey OAuth2 API bağlantısı başarılı! Token alındı.", "Başarılı", wx.OK | wx.ICON_INFORMATION)
+        ok, msg = self.supplier_service.digikey.test_api_access()
+        self.chk_dk_sandbox.SetValue(bool(self.config.settings.get("digikey_sandbox", False)))
+        if ok:
+            wx.MessageBox(msg, "Başarılı", wx.OK | wx.ICON_INFORMATION)
         else:
-            wx.MessageBox(
-                "❌ DigiKey API token alınamadı.\nLütfen Client ID, Client Secret ve Sandbox/Production seçimini kontrol edin.",
-                "Bağlantı Hatası",
-                wx.OK | wx.ICON_ERROR,
-            )
+            wx.MessageBox(msg, "DigiKey API Yetki / Abonelik Uyarısı", wx.OK | wx.ICON_WARNING)

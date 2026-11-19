@@ -7,7 +7,7 @@ and cross-references MPN with EasyEDA/LCSC for CAD symbols, footprints, and 3D m
 import time
 import urllib.parse
 import requests
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from lcsc_digikey_plugin.config import ConfigManager
 
 
@@ -22,6 +22,7 @@ class DigiKeyClient:
         self.timeout = timeout
         self._access_token: Optional[str] = None
         self._token_expiry: float = 0.0
+        self.last_error: str = ""
 
     @property
     def is_configured(self) -> bool:
@@ -43,27 +44,35 @@ class DigiKeyClient:
 
         cid = self.config.settings.get("digikey_client_id", "").strip()
         sec = self.config.settings.get("digikey_client_secret", "").strip()
-        url = f"{self.base_url}/v1/oauth2/token"
 
-        try:
-            resp = requests.post(
-                url,
-                data={
-                    "client_id": cid,
-                    "client_secret": sec,
-                    "grant_type": "client_credentials",
-                },
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
-                timeout=self.timeout,
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                self._access_token = data.get("access_token")
-                expires_in = int(data.get("expires_in") or 1799)
-                self._token_expiry = time.time() + expires_in
-                return self._access_token
-        except Exception as e:
-            print(f"[DigiKeyClient] OAuth token error: {e}")
+        # Try selected environment first; if 401 Invalid clientId, auto-fallback to the other environment
+        bases = [self.base_url, self.SANDBOX_BASE if self.base_url == self.PROD_BASE else self.PROD_BASE]
+        for b_url in bases:
+            url = f"{b_url}/v1/oauth2/token"
+            try:
+                resp = requests.post(
+                    url,
+                    data={
+                        "client_id": cid,
+                        "client_secret": sec,
+                        "grant_type": "client_credentials",
+                    },
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
+                    timeout=self.timeout,
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    self._access_token = data.get("access_token")
+                    expires_in = int(data.get("expires_in") or 1799)
+                    self._token_expiry = time.time() + expires_in
+                    if b_url != self.base_url:
+                        self.config.settings["digikey_sandbox"] = (b_url == self.SANDBOX_BASE)
+                    return self._access_token
+                else:
+                    self.last_error = f"OAuth2 Token Hatası ({resp.status_code}): {resp.text[:160]}"
+            except Exception as e:
+                self.last_error = f"OAuth2 Bağlantı Hatası: {e}"
+                print(f"[DigiKeyClient] OAuth token error: {e}")
         return None
 
     def _headers(self) -> Optional[Dict[str, str]]:
@@ -82,7 +91,8 @@ class DigiKeyClient:
         }
 
     def search_keyword(self, keyword: str, limit: int = 20) -> List[Dict[str, Any]]:
-        """Searches DigiKey API v4 by keyword or part number."""
+        """Searches DigiKey API v4 (with v3 fallback) by keyword or part number."""
+        self.last_error = ""
         headers = self._headers()
         if not headers:
             return []
@@ -103,9 +113,78 @@ class DigiKeyClient:
                     parsed = self._parse_v4_product(prod)
                     if parsed:
                         results.append(parsed)
+                return results
+
+            # Fallback to v3 Product Information API if user subscribed to v3 instead of v4
+            v3_url = f"{self.base_url}/Search/v3/Products/Keyword"
+            v3_resp = requests.post(
+                v3_url,
+                json={"Keywords": keyword.strip(), "RecordCount": limit, "RecordStartPosition": 0},
+                headers=headers,
+                timeout=self.timeout,
+            )
+            if v3_resp.status_code == 200:
+                v3_data = v3_resp.json()
+                for prod in (v3_data.get("Products") or []):
+                    parsed = self._parse_v4_product(prod)
+                    if parsed:
+                        results.append(parsed)
+                return results
+
+            if resp.status_code in (401, 403):
+                self.last_error = (
+                    "DigiKey API Yetki Hatası (403 Forbidden - Product Information API aktif değil). "
+                    "Lütfen developer.digikey.com üzerinde uygulamanızda (Production App) "
+                    "'Product Information V4' API iznini aktif edin."
+                )
+            else:
+                self.last_error = f"DigiKey Arama Hatası (HTTP {resp.status_code})"
         except Exception as e:
+            self.last_error = f"DigiKey İstek Hatası: {e}"
             print(f"[DigiKeyClient] Keyword search error: {e}")
         return results
+
+    def test_api_access(self) -> Tuple[bool, str]:
+        """Tests both OAuth2 token generation AND Product Information API v4/v3 search authorization."""
+        self._access_token = None
+        self._token_expiry = 0.0
+        token = self._get_token()
+        if not token:
+            return False, (
+                "❌ DigiKey OAuth2 Token alınamadı!\n\n"
+                "Lütfen Client ID ve Client Secret değerlerinin doğru olduğundan emin olun."
+            )
+
+        env_name = "Sandbox" if self.config.settings.get("digikey_sandbox", False) else "Production"
+        headers = self._headers()
+        url = f"{self.base_url}/products/v4/search/keyword"
+        try:
+            resp = requests.post(url, json={"Keywords": "STM32", "Limit": 1, "Offset": 0}, headers=headers, timeout=self.timeout)
+            if resp.status_code == 200:
+                return True, f"✅ DigiKey {env_name} API bağlantısı ve 'Product Information v4' ürün arama yetkisi başarılı!"
+
+            v3_resp = requests.post(
+                f"{self.base_url}/Search/v3/Products/Keyword",
+                json={"Keywords": "STM32", "RecordCount": 1},
+                headers=headers,
+                timeout=self.timeout,
+            )
+            if v3_resp.status_code == 200:
+                return True, f"✅ DigiKey {env_name} API bağlantısı ve 'Product Information v3' ürün arama yetkisi başarılı!"
+
+            if resp.status_code in (401, 403):
+                return False, (
+                    f"⚠️ OAuth2 Token alındı ({env_name}), ANCAK ürün arama isteği reddedildi (HTTP {resp.status_code} Forbidden)!\n\n"
+                    "Bunun sebebi developer.digikey.com üzerindeki uygulamanızda 'Product Information' API aboneliğinin kapalı olması veya Sandbox kısıtlamasıdır.\n\n"
+                    "Çözüm:\n"
+                    "1. https://developer.digikey.com adresinde 'Organizations -> Production Apps' bölümüne girin.\n"
+                    "2. Ücretsiz bir 'Production App' oluşturun (veya mevcut uygulamanızı düzenleyin).\n"
+                    "3. Uygulama içindeki API listesinden 'Product Information (v4)' seçeneğini AKTİF (Enabled/Subscribed) yapıp kaydedin.\n"
+                    "4. Production App'in Client ID ve Secret bilgilerini buraya girip 'Sandbox' kutucuğunun işaretini kaldırın."
+                )
+            return False, f"❌ DigiKey Arama Testi Hatası (HTTP {resp.status_code}):\n{resp.text[:250]}"
+        except Exception as e:
+            return False, f"❌ Bağlantı hatası: {e}"
 
     def get_product_details(self, part_number: str) -> Optional[Dict[str, Any]]:
         """Fetches exact product details from DigiKey API v4 by DigiKey P/N or MPN."""
