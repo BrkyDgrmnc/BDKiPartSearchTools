@@ -8,19 +8,21 @@ from typing import Dict, Any, List, Optional
 from lcsc_digikey_plugin.config import ConfigManager
 from lcsc_digikey_plugin.api.lcsc_easyeda_client import LcscEasyEdaClient
 from lcsc_digikey_plugin.api.digikey_client import DigiKeyClient
+from lcsc_digikey_plugin.api.wurth_client import WurthClient
 
 
 class HybridSupplierService:
-    """Orchestrates LCSC/EasyEDA and DigiKey searches, cross-referencing, and CAD resolution."""
+    """Orchestrates LCSC/EasyEDA, DigiKey, and Würth Elektronik searches, cross-referencing, and CAD resolution."""
 
     def __init__(self, config: ConfigManager):
         self.config = config
         self.lcsc = LcscEasyEdaClient()
         self.digikey = DigiKeyClient(config)
+        self.wurth = WurthClient(config)
 
     def search(self, query: str, mode: str = "hybrid") -> List[Dict[str, Any]]:
         """
-        mode: "lcsc" | "digikey" | "hybrid"
+        mode: "lcsc" | "digikey" | "wurth" | "hybrid"
         Returns unified list of component dicts.
         """
         query = (query or "").strip()
@@ -29,12 +31,16 @@ class HybridSupplierService:
 
         lcsc_results: List[Dict[str, Any]] = []
         dk_results: List[Dict[str, Any]] = []
+        wurth_results: List[Dict[str, Any]] = []
 
         if mode in ("lcsc", "hybrid"):
             lcsc_results = self.lcsc.search_components(query)
 
         if mode in ("digikey", "hybrid") and self.digikey.is_configured:
             dk_results = self.digikey.search_keyword(query)
+
+        if mode in ("wurth", "hybrid"):
+            wurth_results = self.wurth.search_components(query)
 
         if mode == "lcsc":
             for item in lcsc_results:
@@ -45,6 +51,12 @@ class HybridSupplierService:
         if mode == "digikey":
             # Return pure DigiKey search results without LCSC enrichment
             return dk_results
+
+        if mode == "wurth":
+            for item in wurth_results:
+                if not item.get("digikey_url") and item.get("mpn"):
+                    item["digikey_url"] = self.digikey.build_digikey_search_url(item["mpn"])
+            return wurth_results
 
         # Hybrid mode: merge by MPN (case-insensitive)
         merged: List[Dict[str, Any]] = []
@@ -74,6 +86,22 @@ class HybridSupplierService:
             else:
                 self._enrich_digikey_with_lcsc(dk_item)
                 merged.append(dk_item)
+
+        for w_item in wurth_results:
+            mpn_key = (w_item.get("mpn") or "").strip().upper()
+            if mpn_key and mpn_key in mpn_map:
+                target = mpn_map[mpn_key]
+                target["source"] += " + Würth"
+                target["_is_wurth"] = True
+                target["_wurth_item"] = w_item.get("_wurth_item")
+                if not target.get("datasheet") and w_item.get("datasheet"):
+                    target["datasheet"] = w_item["datasheet"]
+            else:
+                if not w_item.get("digikey_url") and w_item.get("mpn"):
+                    w_item["digikey_url"] = self.digikey.build_digikey_search_url(w_item["mpn"])
+                merged.append(w_item)
+                if mpn_key:
+                    mpn_map[mpn_key] = w_item
 
         return merged
 
@@ -117,10 +145,19 @@ class HybridSupplierService:
     def resolve_cad_for_part(self, part_info: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
         Ensures CAD data (symbol_data, footprint_data, model_3d) is loaded for a selected part.
-        If the part only has an MPN (e.g., from DigiKey), resolves CAD geometry by MPN without overwriting DigiKey source/LCSC fields.
+        Supports Würth Elektronik native CAD, EasyEDA/LCSC, and DigiKey.
         """
         if part_info.get("_cad_data"):
             return part_info["_cad_data"]
+
+        # Handle Würth Elektronik native CAD models
+        if part_info.get("_is_wurth"):
+            cad = self.wurth.fetch_cad_data(part_info)
+            if cad:
+                part_info["_cad_data"] = cad
+                if not part_info.get("digikey_url") and part_info.get("mpn"):
+                    part_info["digikey_url"] = self.digikey.build_digikey_search_url(part_info["mpn"])
+                return cad
 
         is_pure_digikey = part_info.get("source") == "DigiKey"
         lcsc_id = (part_info.get("lcsc_part") or "").strip()

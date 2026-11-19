@@ -1,6 +1,6 @@
 # BDKiPartSearchTools — Kullanıcı Kılavuzu
 
-**BDKiPartSearchTools**, KiCad (8.0, 9.0 ve 10.0+) kullanıcılarının **LCSC (EasyEDA)** ve **DigiKey** üzerinden saniyeler içinde komponent aramasını, **Şematik Sembol (`.kicad_sym`)**, **PCB Ayak İzi / Footprint (`.kicad_mod`)** ve **3D Modellerini (`.step` / `.wrl`)** otomatik olarak KiCad kütüphanesine eklemesini ve **anlık fiyat/stok bilgileriyle Malzeme Listesi (BOM)** çıktısı almasını sağlayan hepsi-bir-arada bir KiCad eklentisidir.
+**BDKiPartSearchTools**, KiCad (8.0, 9.0 ve 10.0+) kullanıcılarının **LCSC (EasyEDA)**, **DigiKey** ve **Würth Elektronik (Resmi KiCad Kütüphanesi & GitHub)** üzerinden saniyeler içinde komponent aramasını, **Şematik Sembol (`.kicad_sym`)**, **PCB Ayak İzi / Footprint (`.kicad_mod`)** ve **3D Modellerini (`.step` / `.wrl`)** otomatik olarak KiCad kütüphanesine eklemesini ve **anlık fiyat/stok bilgileriyle Malzeme Listesi (BOM)** çıktısı almasını sağlayan hepsi-bir-arada bir KiCad eklentisidir.
 
 ---
 

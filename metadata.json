@@ -1,8 +1,8 @@
 {
   "$schema": "https://go.kicad.org/pcm/schemas/v1",
   "name": "BDKiPartSearchTools",
-  "description": "Component search, symbol/footprint/3D model library importer, and smart priced BOM tool by Berkay Degirmenci.",
-  "description_full": "BDKiPartSearchTools (by Berkay Degirmenci) allows you to search electronic components from online suppliers (LCSC/EasyEDA, DigiKey, etc.) and import them directly into KiCad libraries (.kicad_sym, .kicad_mod, .step, .wrl) with automatic sym-lib-table and fp-lib-table registration.\n\nFeatures:\n- Live 2D Schematic Symbol and PCB Footprint preview before import\n- Automatic category-based or unified library organization (Global or Project scope)\n- Embeds supplier and engineering metadata (MPN, Manufacturer, Supplier Part #, Datasheet, Supplier URLs) into symbols\n- Smart BOM & Live Pricing/Stock manager supporting Engineering CSV, JLCPCB PCBA BOM, and DigiKey Bulk Upload CSV (dynamic live pricing/stock on demand)\n- Accessible from both Schematic Editor (Eeschema) and PCB Editor (Pcbnew) in KiCad 9/10, and PCB Editor in KiCad 8.\n- Note: User interface is currently provided in Turkish.",
+  "description": "Component search, symbol/footprint/3D library importer (LCSC, DigiKey, Würth Elektronik), and smart priced BOM tool by Berkay Degirmenci.",
+  "description_full": "BDKiPartSearchTools (by Berkay Degirmenci) allows you to search electronic components from online suppliers (LCSC/EasyEDA, DigiKey, Würth Elektronik, etc.) and import them directly into KiCad libraries (.kicad_sym, .kicad_mod, .step, .wrl) with automatic sym-lib-table and fp-lib-table registration.\n\nFeatures:\n- Live 2D Schematic Symbol and PCB Footprint preview before import\n- Native support for Würth Elektronik official KiCad library and GitHub repository\n- Automatic category-based or unified library organization (Global or Project scope)\n- Embeds supplier and engineering metadata (MPN, Manufacturer, Supplier Part #, Datasheet, Supplier URLs) into symbols\n- Smart BOM & Live Pricing/Stock manager supporting Engineering CSV, JLCPCB PCBA BOM, and DigiKey Bulk Upload CSV (dynamic live pricing/stock on demand)\n- Accessible from both Schematic Editor (Eeschema) and PCB Editor (Pcbnew) in KiCad 9/10, and PCB Editor in KiCad 8.\n- Multi-language support: Automatically detects KiCad language (English / Turkish) or user-selectable.\n- Note: User interface is provided in Turkish and English.",
   "identifier": "com.berkaydegirmenci.bdkipartsearchtools",
   "type": "plugin",
   "author": {
@@ -32,7 +32,8 @@
     "footprint",
     "symbol",
     "lcsc",
-    "digikey"
+    "digikey",
+    "wurth"
   ],
   "keep_on_update": [
     "^/plugins/.*/data/.*\\.json$"

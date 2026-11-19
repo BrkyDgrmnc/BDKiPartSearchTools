@@ -84,6 +84,16 @@ class ConfigManager:
             return pcb_ws
         return docs_dir
 
+    def _get_default_wurth_lib_dir(self) -> str:
+        """Finds default local clone for Wurth Elektronik library if present."""
+        pcb_ws_wurth = r"E:\PCB_Workspace\PCB_Library\kicad_wurth_library"
+        if os.path.exists(pcb_ws_wurth):
+            return pcb_ws_wurth
+        env_dir = os.environ.get("ARI_WE_LIB_DIR") or os.environ.get("WE_LIB_DIR")
+        if env_dir and os.path.exists(env_dir):
+            return env_dir
+        return ""
+
     def _get_kicad_config_dir(self) -> str:
         """Returns KiCad 10.0 AppData Roaming configuration directory."""
         appdata = os.environ.get("APPDATA", os.path.join(os.path.expanduser("~"), "AppData", "Roaming"))
@@ -114,6 +124,7 @@ class ConfigManager:
             "digikey_locale_language": "en",
             "default_bom_format": "engineering",  # "engineering", "jlcpcb", "digikey"
             "ui_language": "auto",  # "auto", "tr", "en"
+            "wurth_library_dir": self._get_default_wurth_lib_dir(),
             "kicad_config_dir": self._get_kicad_config_dir(),
         }
         if os.path.exists(self.settings_path):

@@ -236,6 +236,7 @@ class MainImporterDialog(wx.Dialog):
                 _("source_hybrid"),
                 _("source_lcsc"),
                 _("source_digikey"),
+                _("source_wurth"),
             ],
         )
         self.choice_source.SetSelection(0)
@@ -393,7 +394,8 @@ class MainImporterDialog(wx.Dialog):
             return
 
         sel_idx = self.choice_source.GetSelection()
-        mode = "hybrid" if sel_idx == 0 else ("lcsc" if sel_idx == 1 else "digikey")
+        mode_map = {0: "hybrid", 1: "lcsc", 2: "digikey", 3: "wurth"}
+        mode = mode_map.get(sel_idx, "hybrid")
 
         if mode == "digikey" and not self.supplier_service.digikey.is_configured:
             wx.MessageBox(
@@ -412,7 +414,7 @@ class MainImporterDialog(wx.Dialog):
         self.sym_canvas.set_geometry(None, "Aranıyor...")
         self.fp_canvas.set_geometry(None, "Aranıyor...", False)
 
-        status_src = "DigiKey API" if mode == "digikey" else ("LCSC / EasyEDA" if mode == "lcsc" else "LCSC / EasyEDA & DigiKey")
+        status_src = "Würth Elektronik" if mode == "wurth" else ("DigiKey API" if mode == "digikey" else ("LCSC / EasyEDA" if mode == "lcsc" else "LCSC & DigiKey & Würth"))
         self._set_busy(True, f"'{query}' aranıyor ({status_src})...")
         self.list_results.DeleteAllItems()
         self.search_results = []
@@ -949,6 +951,29 @@ class MainImporterDialog(wx.Dialog):
         dk_box.Add(fg2, 0, wx.EXPAND | wx.ALL, 10)
         vbox.Add(dk_box, 0, wx.EXPAND | wx.ALL, 8)
 
+        # Würth Elektronik Settings Box
+        we_box = wx.StaticBoxSizer(wx.VERTICAL, panel, _("settings_wurth_box"))
+        fg_we = wx.FlexGridSizer(rows=2, cols=2, vgap=10, hgap=12)
+        fg_we.AddGrowableCol(1, 1)
+
+        we_dir_row = wx.BoxSizer(wx.HORIZONTAL)
+        self.txt_wurth_dir = wx.TextCtrl(panel, value=str(self.config.settings.get("wurth_library_dir", "")))
+        btn_browse_we = wx.Button(panel, label=_("btn_browse"))
+        btn_browse_we.Bind(wx.EVT_BUTTON, self._on_browse_wurth_lib_dir)
+        we_dir_row.Add(self.txt_wurth_dir, 1, wx.EXPAND | wx.RIGHT, 6)
+        we_dir_row.Add(btn_browse_we, 0)
+
+        fg_we.Add(wx.StaticText(panel, label=_("lbl_wurth_path")), 0, wx.ALIGN_CENTER_VERTICAL)
+        fg_we.Add(we_dir_row, 1, wx.EXPAND)
+
+        btn_open_we_gh = wx.Button(panel, label="🌐 GitHub (WurthElektronik/KiCad-Library)")
+        btn_open_we_gh.Bind(wx.EVT_BUTTON, lambda e: webbrowser.open("https://github.com/WurthElektronik/KiCad-Library"))
+        fg_we.Add(wx.StaticText(panel, label="GitHub Repo:"), 0, wx.ALIGN_CENTER_VERTICAL)
+        fg_we.Add(btn_open_we_gh, 0)
+
+        we_box.Add(fg_we, 0, wx.EXPAND | wx.ALL, 10)
+        vbox.Add(we_box, 0, wx.EXPAND | wx.ALL, 8)
+
         # Save Settings Button
         btn_save = wx.Button(panel, label=_("btn_save_settings"))
         btn_save.SetFont(wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
@@ -975,6 +1000,12 @@ class MainImporterDialog(wx.Dialog):
             self.txt_global_dir.SetValue(dlg.GetPath())
         dlg.Destroy()
 
+    def _on_browse_wurth_lib_dir(self, event):
+        dlg = wx.DirDialog(self, "Würth Elektronik Kütüphane Klasörünü Seçin" if I18n.get_current_lang() == "tr" else "Select Wurth Library Folder", style=wx.DD_DEFAULT_STYLE)
+        if dlg.ShowModal() == wx.ID_OK:
+            self.txt_wurth_dir.SetValue(dlg.GetPath())
+        dlg.Destroy()
+
     def _on_save_settings(self, event):
         sel_l = self.choice_ui_lang.GetSelection()
         new_lang = "auto" if sel_l == 0 else ("tr" if sel_l == 1 else "en")
@@ -983,6 +1014,8 @@ class MainImporterDialog(wx.Dialog):
 
         self.config.settings["library_scope"] = "project" if self.rb_scope_project.GetValue() else "global"
         self.config.settings["global_library_dir"] = self.txt_global_dir.GetValue().strip()
+        self.config.settings["wurth_library_dir"] = self.txt_wurth_dir.GetValue().strip()
+        self.supplier_service.wurth.local_root = self.supplier_service.wurth._detect_local_root()
         self.config.settings["library_prefix"] = self.txt_lib_prefix.GetValue().strip()
         self.config.settings["organize_by_category"] = self.chk_by_category.GetValue()
         self.config.settings["auto_register_lib_tables"] = self.chk_auto_reg.GetValue()

@@ -63,8 +63,8 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "en": "Source:",
     },
     "source_hybrid": {
-        "tr": "LCSC + DigiKey (Hibrit)",
-        "en": "LCSC + DigiKey (Hybrid)",
+        "tr": "LCSC + DigiKey + Würth (Hibrit)",
+        "en": "LCSC + DigiKey + Würth (Hybrid)",
     },
     "source_lcsc": {
         "tr": "Sadece LCSC / EasyEDA",
@@ -73,6 +73,10 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
     "source_digikey": {
         "tr": "Sadece DigiKey API",
         "en": "DigiKey API Only",
+    },
+    "source_wurth": {
+        "tr": "Sadece Würth Elektronik",
+        "en": "Würth Elektronik Only",
     },
     "btn_search": {
         "tr": "🔍 Ara",
@@ -208,6 +212,14 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
     "settings_lib_box": {
         "tr": "Kütüphane Depolama ve Kapsam Ayarları",
         "en": "Library Storage & Scope Settings",
+    },
+    "settings_wurth_box": {
+        "tr": "Würth Elektronik Resmi Kütüphane Ayarları (kicad-wurth-library)",
+        "en": "Würth Elektronik Official Library Settings (kicad-wurth-library)",
+    },
+    "lbl_wurth_path": {
+        "tr": "Würth Kütüphane Yolu:",
+        "en": "Würth Library Path:",
     },
     "lbl_scope": {"tr": "Kütüphane Kapsamı:", "en": "Library Scope:"},
     "scope_global": {"tr": "Global (Tüm KiCad projelerinde ortak)", "en": "Global (Shared across all KiCad projects)"},

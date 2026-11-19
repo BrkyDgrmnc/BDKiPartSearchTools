@@ -147,8 +147,48 @@ class LibraryManager:
         model_3d_info = cad_data.get("model_3d")
         model_3d_paths: List[str] = []
         downloaded_3d_files: List[str] = []
+        is_native_kicad = bool(cad_data.get("_is_native_kicad"))
 
-        if model_3d_info and model_3d_info.get("uuid"):
+        if is_native_kicad and model_3d_info:
+            step_src = model_3d_info.get("step_source")
+            wrl_src = model_3d_info.get("wrl_source")
+            model_title = self._sanitize_identifier(fp_name or mpn)
+
+            if self.config.settings.get("download_3d_step", True) and step_src:
+                step_file = os.path.join(shapes3d_dir_path, f"{model_title}.step")
+                if not os.path.exists(step_file) or os.path.getsize(step_file) < 100:
+                    if os.path.exists(step_src):
+                        import shutil
+                        shutil.copyfile(step_src, step_file)
+                    elif str(step_src).startswith("http"):
+                        import urllib.request
+                        urllib.request.urlretrieve(step_src, step_file)
+                if os.path.exists(step_file) and os.path.getsize(step_file) >= 100:
+                    downloaded_3d_files.append(step_file)
+                    if is_project_scope and project_dir:
+                        rel_step = os.path.relpath(step_file, project_dir).replace("\\", "/")
+                        model_3d_paths.append(f"${{KIPRJMOD}}/{rel_step}")
+                    else:
+                        model_3d_paths.append(step_file.replace("\\", "/"))
+
+            if self.config.settings.get("download_3d_wrl", False) and wrl_src:
+                wrl_file = os.path.join(shapes3d_dir_path, f"{model_title}.wrl")
+                if not os.path.exists(wrl_file) or os.path.getsize(wrl_file) < 100:
+                    if os.path.exists(wrl_src):
+                        import shutil
+                        shutil.copyfile(wrl_src, wrl_file)
+                    elif str(wrl_src).startswith("http"):
+                        import urllib.request
+                        urllib.request.urlretrieve(wrl_src, wrl_file)
+                if os.path.exists(wrl_file) and os.path.getsize(wrl_file) >= 100:
+                    downloaded_3d_files.append(wrl_file)
+                    if is_project_scope and project_dir:
+                        rel_wrl = os.path.relpath(wrl_file, project_dir).replace("\\", "/")
+                        model_3d_paths.append(f"${{KIPRJMOD}}/{rel_wrl}")
+                    else:
+                        model_3d_paths.append(wrl_file.replace("\\", "/"))
+
+        elif model_3d_info and model_3d_info.get("uuid"):
             uuid_3d = model_3d_info["uuid"]
             model_title = self._sanitize_identifier(model_3d_info.get("title") or fp_name or mpn)
 
@@ -177,57 +217,84 @@ class LibraryManager:
                         model_3d_paths.append(wrl_file.replace("\\", "/"))
 
         # 2. Generate and save .kicad_mod footprint file
-        footprint_data = cad_data.get("footprint_data") or {}
-        if footprint_data:
-            fp_sexpr = self.converter.generate_kicad_footprint(
-                footprint_name=fp_name,
-                footprint_data=footprint_data,
-                model_3d_paths=model_3d_paths,
-                model_3d_info=model_3d_info,
-                description=part_info.get("description", ""),
-            )
+        if is_native_kicad and cad_data.get("footprint_sexpr"):
+            raw_fp_sexpr = cad_data["footprint_sexpr"]
+            fp_sexpr = re.sub(r'\(footprint\s+"[^"]+"', f'(footprint "{fp_name}"', raw_fp_sexpr, count=1)
+            if model_3d_paths:
+                fp_sexpr = re.sub(r'\(model\s+"[^"]+".*?\n\s*\)', '', fp_sexpr, flags=re.DOTALL)
+                model_stmts = []
+                for mp in model_3d_paths:
+                    model_stmts.append(f'\t(model "{mp}"\n\t\t(offset (xyz 0 0 0))\n\t\t(scale (xyz 1 1 1))\n\t\t(rotate (xyz 0 0 0))\n\t)')
+                last_paren = fp_sexpr.rfind(')')
+                if last_paren != -1:
+                    fp_sexpr = fp_sexpr[:last_paren] + "\n" + "\n".join(model_stmts) + "\n)\n"
             if self.config.settings.get("overwrite_existing_footprint", True) or not os.path.exists(fp_file_path):
                 with open(fp_file_path, "w", encoding="utf-8") as f:
                     f.write(fp_sexpr)
+        else:
+            footprint_data = cad_data.get("footprint_data") or {}
+            if footprint_data:
+                fp_sexpr = self.converter.generate_kicad_footprint(
+                    footprint_name=fp_name,
+                    footprint_data=footprint_data,
+                    model_3d_paths=model_3d_paths,
+                    model_3d_info=model_3d_info,
+                    description=part_info.get("description", ""),
+                )
+                if self.config.settings.get("overwrite_existing_footprint", True) or not os.path.exists(fp_file_path):
+                    with open(fp_file_path, "w", encoding="utf-8") as f:
+                        f.write(fp_sexpr)
 
         # 3. Generate and insert/update .kicad_sym symbol block with full BOM fields
         footprint_ref = f"{lib_name}:{fp_name}"
         raw_prefix = (cad_data.get("metadata") or {}).get("prefix", "")
         ref_prefix = ConfigManager.get_reference_prefix(category, part_info.get("reference_prefix") or raw_prefix)
 
-        unit_price = part_info.get("unit_price", 0.0)
-        lcsc_price = part_info.get("lcsc_price", 0.0)
-        dk_price = part_info.get("digikey_price", 0.0)
+        if is_native_kicad and cad_data.get("symbol_sexpr"):
+            raw_sym = cad_data["symbol_sexpr"]
+            name_m = re.search(r'\(symbol\s+"([^"]+)"', raw_sym)
+            orig_name = name_m.group(1) if name_m else mpn
+            sym_block = re.sub(r'\(symbol\s+"' + re.escape(orig_name) + r'"', f'(symbol "{mpn}"', raw_sym, count=1)
+            # Update Footprint property
+            sym_block = re.sub(r'\(property\s+"Footprint"\s+"[^"]*"', f'(property "Footprint" "{footprint_ref}"', sym_block)
+            # Update Value property
+            sym_block = re.sub(r'\(property\s+"Value"\s+"[^"]*"', f'(property "Value" "{mpn}"', sym_block)
+            self._upsert_symbol_in_library(
+                sym_file_path=sym_file_path,
+                symbol_name=mpn,
+                symbol_block=sym_block,
+                overwrite=self.config.settings.get("overwrite_existing_symbol", True),
+            )
+        else:
+            sym_properties = {
+                "Reference": ref_prefix,
+                "Value": part_info.get("value") or mpn,
+                "Footprint": footprint_ref,
+                "Datasheet": part_info.get("datasheet", ""),
+                "Description": part_info.get("description", ""),
+                "Manufacturer": part_info.get("manufacturer", ""),
+                "MPN": part_info.get("mpn") or mpn,
+                "LCSC_Part": part_info.get("lcsc_part", ""),
+                "DigiKey_Part": part_info.get("digikey_part", ""),
+                "Category": category,
+                "Package": part_info.get("package", ""),
+                "Part_Type": part_info.get("part_type", ""),
+                "Supplier_URL": part_info.get("supplier_url", ""),
+                "DigiKey_URL": part_info.get("digikey_url", ""),
+            }
 
-        sym_properties = {
-            "Reference": ref_prefix,
-            "Value": part_info.get("value") or mpn,
-            "Footprint": footprint_ref,
-            "Datasheet": part_info.get("datasheet", ""),
-            "Description": part_info.get("description", ""),
-            "Manufacturer": part_info.get("manufacturer", ""),
-            "MPN": part_info.get("mpn") or mpn,
-            "LCSC_Part": part_info.get("lcsc_part", ""),
-            "DigiKey_Part": part_info.get("digikey_part", ""),
-            "Category": category,
-            "Package": part_info.get("package", ""),
-            "Part_Type": part_info.get("part_type", ""),
-            "Supplier_URL": part_info.get("supplier_url", ""),
-            "DigiKey_URL": part_info.get("digikey_url", ""),
-        }
-
-        symbol_data = cad_data.get("symbol_data") or {}
-        sym_block = self.converter.generate_kicad_symbol_block(
-            symbol_name=mpn,
-            symbol_data=symbol_data,
-            properties=sym_properties,
-        )
-        self._upsert_symbol_in_library(
-            sym_file_path=sym_file_path,
-            symbol_name=mpn,
-            symbol_block=sym_block,
-            overwrite=self.config.settings.get("overwrite_existing_symbol", True),
-        )
+            symbol_data = cad_data.get("symbol_data") or {}
+            sym_block = self.converter.generate_kicad_symbol_block(
+                symbol_name=mpn,
+                symbol_data=symbol_data,
+                properties=sym_properties,
+            )
+            self._upsert_symbol_in_library(
+                sym_file_path=sym_file_path,
+                symbol_name=mpn,
+                symbol_block=sym_block,
+                overwrite=self.config.settings.get("overwrite_existing_symbol", True),
+            )
 
         # 4. Register in sym-lib-table and fp-lib-table (Global + Project if project has local tables)
         sym_table_updated = False
