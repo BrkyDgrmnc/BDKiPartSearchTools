@@ -82,7 +82,7 @@ Kurulum sonrasında eklentiye hem **Şematik Editörü** hem de **PCB Editörü*
   * **Global Kütüphane *(Varsayılan)*:** İndirdiğiniz tüm komponentler tek bir merkezi klasörde toplanır ve tüm KiCad projelerinizde ortak kullanılır.
   * **Aktif Proje Klasörü:** İndirilen komponentler sadece o an çalıştığınız projenin kendi klasörü içine (`${KIPRJMOD}/Libraries`) kaydedilir; projeyi başka bir bilgisayara taşıdığınızda tüm kütüphaneleriyle birlikte gider.
 * **Dosya Organizasyonu:**
-  * Komponentleri kategorilerine göre ayrı kütüphanelere (`ARI_Resistors`, `ARI_Capacitors`, `ARI_ICs_MCUs` vb.) ayırabilir veya tek bir ortak kütüphane altında toplayabilirsiniz.
+  * Komponentleri kategorilerine göre ayrı kütüphanelere (`BDKi_Resistors`, `BDKi_Capacitors`, `BDKi_ICs_MCUs` vb.) ayırabilir veya tek bir ortak kütüphane altında toplayabilirsiniz.
 * **DigiKey API Bağlantısı *(İsteğe Bağlı)*:**
   * Eklenti, LCSC / EasyEDA aramaları ve CAD (Sembol/Footprint/3D) indirmeleri için **hiçbir API anahtarına ihtiyaç duymadan** kutudan çıktığı gibi çalışır.
   * DigiKey üzerinden de canlı fiyat, stok ve doğrudan arama yapmak isterseniz [developer.digikey.com](https://developer.digikey.com/) adresinden ücretsiz bir uygulama oluşturup **Product Information API v4** `Client ID` ve `Client Secret` bilgilerinizi bu sekmeye girebilir ve **`🔑 DigiKey API Bağlantısını Test Et`** butonuyla bağlantınızı doğrulayabilirsiniz.

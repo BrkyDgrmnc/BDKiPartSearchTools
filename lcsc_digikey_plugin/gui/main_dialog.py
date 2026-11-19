@@ -806,13 +806,13 @@ class MainImporterDialog(wx.Dialog):
         fg1.Add(wx.StaticText(panel, label="Global Kütüphane Klasörü:"), 0, wx.ALIGN_CENTER_VERTICAL)
         fg1.Add(dir_row, 1, wx.EXPAND)
 
-        self.txt_lib_prefix = wx.TextCtrl(panel, value=str(self.config.settings.get("library_prefix", "ARI_")))
-        fg1.Add(wx.StaticText(panel, label="Kütüphane Ön Eki (Örn. ARI_):"), 0, wx.ALIGN_CENTER_VERTICAL)
+        self.txt_lib_prefix = wx.TextCtrl(panel, value=str(self.config.settings.get("library_prefix", "BDKi_")))
+        fg1.Add(wx.StaticText(panel, label="Kütüphane Ön Eki (Örn. BDKi_):"), 0, wx.ALIGN_CENTER_VERTICAL)
         fg1.Add(self.txt_lib_prefix, 1, wx.EXPAND)
 
         self.chk_by_category = wx.CheckBox(
             panel,
-            label="Her komponent kategorisi için ayrı dosya oluştur (Örn: ARI_Resistors.kicad_sym, ARI_ICs_MCUs.kicad_sym)",
+            label="Her komponent kategorisi için ayrı dosya oluştur (Örn: BDKi_Resistors.kicad_sym, BDKi_ICs_MCUs.kicad_sym)",
         )
         self.chk_by_category.SetValue(bool(self.config.settings.get("organize_by_category", True)))
         fg1.Add(wx.StaticText(panel, label="Dosya Organizasyonu:"), 0, wx.ALIGN_CENTER_VERTICAL)

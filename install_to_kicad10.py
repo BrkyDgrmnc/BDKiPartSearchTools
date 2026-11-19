@@ -100,13 +100,24 @@ def install():
             json.dump(cfg, f, indent=2, ensure_ascii=False)
         print(f"Updated {cfg_name} with BDKiPartSearchTools identifier!")
 
-    # Pre-initialize and register all 14 category libraries in sym-lib-table and fp-lib-table
+    # Clean up old LC_DK_Library auto-entries from sym-lib-table and fp-lib-table and pre-register all 14 BDKi_* category libraries
     from lcsc_digikey_plugin.config import ConfigManager
     from lcsc_digikey_plugin.library.library_manager import LibraryManager
     cfg_mgr = ConfigManager()
+    kicad_cfg_dir = cfg_mgr._get_kicad_config_dir()
+    for tbl_name in ("sym-lib-table", "fp-lib-table"):
+        tbl_path = os.path.join(kicad_cfg_dir, tbl_name)
+        if os.path.exists(tbl_path):
+            with open(tbl_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+            cleaned = [ln for ln in lines if "LC_DK_Library" not in ln]
+            if len(cleaned) != len(lines):
+                with open(tbl_path, "w", encoding="utf-8") as f:
+                    f.writelines(cleaned)
+
     lib_mgr = LibraryManager(cfg_mgr)
     lib_mgr.ensure_all_category_libraries_initialized()
-    print("Pre-registered all 14 ARI_* category libraries in sym-lib-table and fp-lib-table!")
+    print("Pre-registered all 14 BDKi_* category libraries in sym-lib-table and fp-lib-table!")
 
 
 if __name__ == "__main__":

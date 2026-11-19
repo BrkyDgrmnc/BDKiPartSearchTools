@@ -78,9 +78,8 @@ class ConfigManager:
 
     def _get_default_global_lib_dir(self) -> str:
         """Determines the best default global library directory on the user's machine."""
-        # Check KiCad 10 common config for user custom library dir or Documents/KiCad/10.0
-        docs_dir = os.path.join(os.path.expanduser("~"), "Documents", "KiCad", "10.0", "libraries", "LC_DK_Library")
-        pcb_ws = r"E:\PCB_Workspace\PCB_Library\LC_DK_Library"
+        docs_dir = os.path.join(os.path.expanduser("~"), "Documents", "KiCad", "10.0", "libraries", "BDKi_Library")
+        pcb_ws = r"E:\PCB_Workspace\PCB_Library\BDKi_Library"
         if os.path.exists(r"E:\PCB_Workspace\PCB_Library"):
             return pcb_ws
         return docs_dir
@@ -99,7 +98,7 @@ class ConfigManager:
             "library_scope": "global",  # "global" or "project"
             "global_library_dir": self._get_default_global_lib_dir(),
             "project_library_subdir": "Libraries",
-            "library_prefix": "ARI_",  # e.g. ARI_Resistors.kicad_sym
+            "library_prefix": "BDKi_",  # e.g. BDKi_Resistors.kicad_sym
             "organize_by_category": True,
             "single_library_name": "Custom_Components",
             "download_3d_step": True,
@@ -120,6 +119,10 @@ class ConfigManager:
             try:
                 with open(self.settings_path, "r", encoding="utf-8") as f:
                     loaded = json.load(f)
+                if loaded.get("library_prefix") == "ARI_":
+                    loaded["library_prefix"] = "BDKi_"
+                if str(loaded.get("global_library_dir", "")).endswith("LC_DK_Library"):
+                    loaded["global_library_dir"] = self._get_default_global_lib_dir()
                 defaults.update(loaded)
             except Exception:
                 pass

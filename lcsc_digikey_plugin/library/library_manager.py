@@ -83,7 +83,7 @@ class LibraryManager:
         return global_dir, False
 
     def get_library_name_for_category(self, category: str) -> str:
-        prefix = (self.config.settings.get("library_prefix") or "ARI_").strip()
+        prefix = (self.config.settings.get("library_prefix") or "BDKi_").strip()
         if not self.config.settings.get("organize_by_category", True):
             single = (self.config.settings.get("single_library_name") or "Custom_Components").strip()
             return f"{prefix}{single}" if prefix and not single.startswith(prefix) else single
