@@ -14,6 +14,7 @@ from lcsc_digikey_plugin.converters.easyeda_converter import EasyEDA2KiCadConver
 from lcsc_digikey_plugin.library.library_manager import LibraryManager
 from lcsc_digikey_plugin.bom.bom_manager import BomManager
 from lcsc_digikey_plugin.gui.preview_canvas import SymbolPreviewCanvas, FootprintPreviewCanvas
+from lcsc_digikey_plugin.i18n import I18n, _
 
 
 class BomRowEditDialog(wx.Dialog):
@@ -66,14 +67,18 @@ class MainImporterDialog(wx.Dialog):
     """Main multi-tabbed dialog for KiCad 10 LCSC & DigiKey Component Importer & Smart BOM Manager."""
 
     def __init__(self, parent=None, board=None, project_dir: Optional[str] = None):
+        self.board = board
+        self.config = ConfigManager()
+        I18n.init(
+            self.config.settings.get("ui_language", "auto"),
+            self.config.settings.get("kicad_config_dir"),
+        )
         super().__init__(
             parent,
-            title="BDKiPartSearchTools - Komponent Kütüphane ve Akıllı BOM Yöneticisi (by Berkay Değirmenci)",
+            title=_("app_title"),
             size=(1180, 780),
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.MAXIMIZE_BOX | wx.MINIMIZE_BOX,
         )
-        self.board = board
-        self.config = ConfigManager()
         self._apply_window_icon()
         self.project_dir = project_dir or self._detect_project_dir()
 
@@ -175,9 +180,9 @@ class MainImporterDialog(wx.Dialog):
         self._build_bom_tab(self.tab_bom)
         self._build_settings_tab(self.tab_settings)
 
-        self.notebook.AddPage(self.tab_search, "🔍 1. Komponent Ara ve Kütüphaneye Ekle (LCSC & DigiKey)")
-        self.notebook.AddPage(self.tab_bom, "📊 2. Akıllı BOM, Fiyat ve Stok Çıktısı")
-        self.notebook.AddPage(self.tab_settings, "⚙️ 3. Kütüphane ve API Ayarları")
+        self.notebook.AddPage(self.tab_search, _("tab_search"))
+        self.notebook.AddPage(self.tab_bom, _("tab_bom"))
+        self.notebook.AddPage(self.tab_settings, _("tab_settings"))
 
         main_sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, 6)
 
@@ -185,15 +190,28 @@ class MainImporterDialog(wx.Dialog):
         status_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.lbl_status = wx.StaticText(
             self,
-            label="Hazır. LCSC parça kodu (örn. C2040), DigiKey kodu veya MPN (örn. STM32F103C8T6, PESD2CAN) aratabilirsiniz.",
+            label=_("status_found", query="", count=0) if False else ("Hazır." if I18n.get_current_lang() == "tr" else "Ready."),
         )
-        self.gauge = wx.Gauge(self, range=100, size=(180, 16))
+        self.gauge = wx.Gauge(self, range=100, size=(160, 16))
         self.gauge.Hide()
-        btn_close = wx.Button(self, wx.ID_CLOSE, "Kapat")
-        btn_close.Bind(wx.EVT_BUTTON, lambda e: self.EndModal(wx.ID_OK) if self.IsModal() else self.Close())
 
+        # Language dropdown in bottom bar
         status_sizer.Add(self.lbl_status, 1, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 8)
         status_sizer.Add(self.gauge, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
+
+        status_sizer.Add(wx.StaticText(self, label=_("lang_label")), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 4)
+        self.choice_lang = wx.Choice(
+            self,
+            choices=[_("lang_auto"), _("lang_tr"), _("lang_en")],
+        )
+        pref = self.config.settings.get("ui_language", "auto")
+        sel_map = {"auto": 0, "tr": 1, "en": 2}
+        self.choice_lang.SetSelection(sel_map.get(pref, 0))
+        self.choice_lang.Bind(wx.EVT_CHOICE, self._on_quick_lang_changed)
+        status_sizer.Add(self.choice_lang, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
+
+        btn_close = wx.Button(self, wx.ID_CLOSE, "Kapat" if I18n.get_current_lang() == "tr" else "Close")
+        btn_close.Bind(wx.EVT_BUTTON, lambda e: self.EndModal(wx.ID_OK) if self.IsModal() else self.Close())
         status_sizer.Add(btn_close, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
 
         main_sizer.Add(status_sizer, 0, wx.EXPAND | wx.BOTTOM | wx.TOP, 4)
@@ -207,33 +225,33 @@ class MainImporterDialog(wx.Dialog):
         vbox = wx.BoxSizer(wx.VERTICAL)
 
         # Top Search Bar
-        search_box = wx.StaticBoxSizer(wx.HORIZONTAL, panel, "LCSC / EasyEDA & DigiKey Komponent Arama")
+        search_box = wx.StaticBoxSizer(wx.HORIZONTAL, panel, _("search_lbl"))
         self.txt_query = wx.TextCtrl(panel, style=wx.TE_PROCESS_ENTER, size=(340, -1))
-        self.txt_query.SetHint("Örn: C2040, RP2040, STM32G431, 10k 0402, PESD2CAN...")
+        self.txt_query.SetHint(_("search_placeholder"))
         self.txt_query.Bind(wx.EVT_TEXT_ENTER, self._on_search_clicked)
 
         self.choice_source = wx.Choice(
             panel,
             choices=[
-                "LCSC + DigiKey (Hibrit)",
-                "Sadece LCSC / EasyEDA",
-                "Sadece DigiKey API",
+                _("source_hybrid"),
+                _("source_lcsc"),
+                _("source_digikey"),
             ],
         )
         self.choice_source.SetSelection(0)
 
-        self.btn_search = wx.Button(panel, label="🔍 Ara")
+        self.btn_search = wx.Button(panel, label=_("btn_search"))
         self.btn_search.SetFont(wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         self.btn_search.Bind(wx.EVT_BUTTON, self._on_search_clicked)
         self.btn_search.SetDefault()
 
-        self.btn_clear_search = wx.Button(panel, label="✖ Temizle", size=(76, -1))
+        self.btn_clear_search = wx.Button(panel, label=_("btn_clear"), size=(76, -1))
         self.btn_clear_search.Bind(wx.EVT_BUTTON, self._on_clear_search_clicked)
 
-        search_box.Add(wx.StaticText(panel, label="Arama / Parça No:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 6)
+        search_box.Add(wx.StaticText(panel, label=_("search_lbl")), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 6)
         search_box.Add(self.txt_query, 1, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 4)
         search_box.Add(self.btn_clear_search, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
-        search_box.Add(wx.StaticText(panel, label="Kaynak:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 6)
+        search_box.Add(wx.StaticText(panel, label=_("source_lbl")), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 6)
         search_box.Add(self.choice_source, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 8)
         search_box.Add(self.btn_search, 0, wx.ALIGN_CENTER_VERTICAL)
 
@@ -242,16 +260,16 @@ class MainImporterDialog(wx.Dialog):
         # Results ListCtrl
         self.list_results = wx.ListCtrl(panel, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_SUNKEN)
         cols = [
-            ("Kaynak", 95),
-            ("MPN (Parça No)", 155),
-            ("Üretici", 120),
-            ("Kategori", 130),
-            ("Paket / Footprint", 120),
-            ("LCSC #", 85),
-            ("DigiKey #", 115),
-            ("Birim Fiyat ($)", 95),
-            ("Stok", 80),
-            ("Açıklama", 240),
+            (_("col_source"), 95),
+            (_("col_mpn"), 155),
+            (_("col_mfg"), 120),
+            (_("col_cat"), 130),
+            (_("col_pkg"), 120),
+            (_("col_lcsc"), 85),
+            (_("col_dk"), 115),
+            (_("col_price"), 95),
+            (_("col_stock"), 80),
+            (_("col_desc"), 240),
         ]
         for idx, (col_title, width) in enumerate(cols):
             self.list_results.InsertColumn(idx, col_title, width=width)
@@ -262,7 +280,7 @@ class MainImporterDialog(wx.Dialog):
         bottom_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         # 2D Preview Canvases
-        preview_box = wx.StaticBoxSizer(wx.HORIZONTAL, panel, "Canlı CAD Önizleme (Şematik Sembol & PCB Footprint)")
+        preview_box = wx.StaticBoxSizer(wx.HORIZONTAL, panel, _("preview_box"))
         self.sym_canvas = SymbolPreviewCanvas(panel)
         self.fp_canvas = FootprintPreviewCanvas(panel)
         self.sym_canvas.SetMinSize((260, 230))
@@ -272,7 +290,7 @@ class MainImporterDialog(wx.Dialog):
         bottom_sizer.Add(preview_box, 5, wx.EXPAND | wx.RIGHT, 6)
 
         # Import Details & Custom BOM Fields Box
-        import_box = wx.StaticBoxSizer(wx.VERTICAL, panel, "Kütüphane ve BOM Alanları (İçe Aktarmadan Önce Düzenlenebilir)")
+        import_box = wx.StaticBoxSizer(wx.VERTICAL, panel, _("import_box"))
         fg = wx.FlexGridSizer(rows=5, cols=4, vgap=6, hgap=8)
         fg.AddGrowableCol(1, 1)
         fg.AddGrowableCol(3, 1)
@@ -297,18 +315,18 @@ class MainImporterDialog(wx.Dialog):
             fg.Add(wx.StaticText(panel, label=lbl2), 0, wx.ALIGN_CENTER_VERTICAL)
             fg.Add(ctrl2, 1, wx.EXPAND)
 
-        add_fg_pair("Kategori:", self.choice_category, "Hedef Kütüphane:", self.txt_target_lib)
-        add_fg_pair("Sembol Adı (MPN):", self.txt_sym_name, "Ref Prefix:", self.txt_ref_prefix)
-        add_fg_pair("Footprint Adı:", self.txt_fp_name, "Paket:", self.txt_pkg)
-        add_fg_pair("LCSC Parça No:", self.txt_lcsc_code, "DigiKey Parça No:", self.txt_dk_code)
-        add_fg_pair("Birim Fiyat ($):", self.txt_unit_price, "Üretici:", self.txt_mfg)
+        add_fg_pair(_("lbl_category"), self.choice_category, _("lbl_target_lib"), self.txt_target_lib)
+        add_fg_pair(_("lbl_sym_name"), self.txt_sym_name, _("lbl_ref_prefix"), self.txt_ref_prefix)
+        add_fg_pair(_("lbl_fp_name"), self.txt_fp_name, _("lbl_pkg"), self.txt_pkg)
+        add_fg_pair(_("lbl_lcsc_code"), self.txt_lcsc_code, _("lbl_dk_code"), self.txt_dk_code)
+        add_fg_pair(_("lbl_unit_price"), self.txt_unit_price, _("lbl_mfg"), self.txt_mfg)
 
         import_box.Add(fg, 0, wx.EXPAND | wx.ALL, 4)
 
         # Checkboxes for what to import
         chk_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.chk_step = wx.CheckBox(panel, label="3D STEP Modeli (.step)")
-        self.chk_wrl = wx.CheckBox(panel, label="3D WRL Modeli (.wrl)")
+        self.chk_step = wx.CheckBox(panel, label=_("chk_step"))
+        self.chk_wrl = wx.CheckBox(panel, label=_("chk_wrl"))
         self.chk_step.SetValue(bool(self.config.settings.get("download_3d_step", True)))
         self.chk_wrl.SetValue(bool(self.config.settings.get("download_3d_wrl", False)))
         chk_sizer.Add(self.chk_step, 0, wx.RIGHT, 12)
@@ -317,18 +335,18 @@ class MainImporterDialog(wx.Dialog):
 
         # Action Buttons
         btn_row = wx.BoxSizer(wx.HORIZONTAL)
-        self.btn_import = wx.Button(panel, label="📥 KiCad Kütüphanesine İçe Aktar (Sembol + Footprint + 3D)")
+        self.btn_import = wx.Button(panel, label=_("btn_import"))
         self.btn_import.SetFont(wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         self.btn_import.SetBackgroundColour(wx.Colour(38, 125, 62))
         self.btn_import.SetForegroundColour(wx.Colour(255, 255, 255))
         self.btn_import.Enable(False)
         self.btn_import.Bind(wx.EVT_BUTTON, self._on_import_clicked)
 
-        self.btn_datasheet = wx.Button(panel, label="📄 Datasheet")
+        self.btn_datasheet = wx.Button(panel, label=_("btn_datasheet"))
         self.btn_datasheet.Enable(False)
         self.btn_datasheet.Bind(wx.EVT_BUTTON, self._on_open_datasheet)
 
-        self.btn_web = wx.Button(panel, label="🌐 LCSC / DigiKey Sayfası")
+        self.btn_web = wx.Button(panel, label=_("btn_web"))
         self.btn_web.Enable(False)
         self.btn_web.Bind(wx.EVT_BUTTON, self._on_open_supplier_url)
 
@@ -621,18 +639,18 @@ class MainImporterDialog(wx.Dialog):
         vbox = wx.BoxSizer(wx.VERTICAL)
 
         # Top Controls
-        top_bar = wx.StaticBoxSizer(wx.HORIZONTAL, panel, "Proje BOM Kaynağı ve Canlı Fiyat/Stok Güncelleme")
+        top_bar = wx.StaticBoxSizer(wx.HORIZONTAL, panel, _("bom_top_box"))
 
-        btn_reload = wx.Button(panel, label="🔄 Aktif Projeden Yükle (Şematik + PCB)")
+        btn_reload = wx.Button(panel, label="🔄 " + ("Aktif Projeden Yükle (Şematik + PCB)" if I18n.get_current_lang() == "tr" else "Load from Active Project (Sch + PCB)"))
         btn_reload.Bind(wx.EVT_BUTTON, lambda e: self._load_bom_from_project())
 
-        btn_pick_dir = wx.Button(panel, label="📂 Proje Klasörü Seç...")
+        btn_pick_dir = wx.Button(panel, label="📂 " + ("Proje Klasörü Seç..." if I18n.get_current_lang() == "tr" else "Choose Project Folder..."))
         btn_pick_dir.Bind(wx.EVT_BUTTON, self._on_pick_project_dir)
 
         self.spin_boards = wx.SpinCtrl(panel, value="1", min=1, max=100000, size=(75, -1))
         self.spin_boards.Bind(wx.EVT_SPINCTRL, lambda e: self._refresh_bom_table_view())
 
-        self.btn_live_price = wx.Button(panel, label="⚡ Canlı Fiyat, Stok ve Parça Numaralarını Çek (LCSC / DigiKey)")
+        self.btn_live_price = wx.Button(panel, label="⚡ " + ("Canlı Fiyat, Stok ve Parça Numaralarını Çek (LCSC / DigiKey)" if I18n.get_current_lang() == "tr" else "Fetch Live Price, Stock & Order Parts (LCSC / DigiKey)"))
         self.btn_live_price.SetFont(wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         self.btn_live_price.SetBackgroundColour(wx.Colour(0, 102, 180))
         self.btn_live_price.SetForegroundColour(wx.Colour(255, 255, 255))
@@ -640,7 +658,7 @@ class MainImporterDialog(wx.Dialog):
 
         top_bar.Add(btn_reload, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 6)
         top_bar.Add(btn_pick_dir, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 12)
-        top_bar.Add(wx.StaticText(panel, label="Üretilecek Kart Adedi (PCB Sayısı):"), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 6)
+        top_bar.Add(wx.StaticText(panel, label=_("lbl_order_qty")), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 6)
         top_bar.Add(self.spin_boards, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 12)
         top_bar.Add(self.btn_live_price, 1, wx.ALIGN_CENTER_VERTICAL)
 
@@ -650,20 +668,20 @@ class MainImporterDialog(wx.Dialog):
         self.list_bom = wx.ListCtrl(panel, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_SUNKEN)
         bom_cols = [
             ("#", 38),
-            ("Designators (Ref)", 130),
-            ("Adet (1 PCB)", 85),
-            ("Toplam Adet", 85),
-            ("Value", 110),
-            ("Paket / Footprint", 125),
-            ("Üretici", 110),
-            ("MPN (Parça No)", 145),
-            ("LCSC #", 85),
-            ("DigiKey #", 115),
-            ("Birim Fiyat ($)", 95),
-            ("1 PCB Tutarı ($)", 105),
-            ("Toplam Tutar ($)", 110),
-            ("Stok", 80),
-            ("Kategori", 120),
+            (_("bom_col_ref"), 130),
+            ("Adet (1 PCB)" if I18n.get_current_lang() == "tr" else "Qty (1 PCB)", 85),
+            (_("bom_col_qty"), 85),
+            (_("bom_col_val"), 110),
+            (_("col_pkg"), 125),
+            (_("col_mfg"), 110),
+            (_("col_mpn"), 145),
+            (_("col_lcsc"), 85),
+            (_("col_dk"), 115),
+            (_("col_price"), 95),
+            ("1 PCB ($)" if I18n.get_current_lang() == "tr" else "1 PCB Total ($)", 105),
+            (_("bom_col_total"), 110),
+            (_("col_stock"), 80),
+            (_("col_cat"), 120),
         ]
         for idx, (col_title, width) in enumerate(bom_cols):
             self.list_bom.InsertColumn(idx, col_title, width=width)
@@ -672,24 +690,24 @@ class MainImporterDialog(wx.Dialog):
         vbox.Add(self.list_bom, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 6)
 
         # Summary & Export Bar
-        bottom_bar = wx.StaticBoxSizer(wx.HORIZONTAL, panel, "Maliyet Özeti ve BOM Dışa Aktarma (Çift tıklayarak satır düzenleyebilirsiniz)")
+        bottom_bar = wx.StaticBoxSizer(wx.HORIZONTAL, panel, "Maliyet Özeti ve BOM Dışa Aktarma" if I18n.get_current_lang() == "tr" else "Cost Summary & BOM Export")
         self.lbl_bom_summary = wx.StaticText(
             panel,
-            label="Toplam: 0 Benzersiz Parça | 1 PCB Maliyeti: $0.0000 | Toplam Parti Maliyeti: $0.0000",
+            label="Toplam: 0 | Maliyet: $0.00" if I18n.get_current_lang() == "tr" else "Total: 0 | Cost: $0.00",
         )
         self.lbl_bom_summary.SetFont(wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
 
         self.choice_bom_fmt = wx.Choice(
             panel,
             choices=[
-                "Genel Mühendislik BOM (MPN, LCSC #, DigiKey #, Fiyat, Stok, Linkler)",
-                "JLCPCB / LCSC PCBA (Dizgi) Uyumlu BOM CSV",
-                "DigiKey Toplu Sipariş (Bulk Upload) Uyumlu CSV",
+                "Genel Mühendislik BOM" if I18n.get_current_lang() == "tr" else "Engineering BOM CSV",
+                "JLCPCB / LCSC PCBA CSV",
+                "DigiKey Bulk Upload CSV",
             ],
         )
         self.choice_bom_fmt.SetSelection(0)
 
-        btn_export_bom = wx.Button(panel, label="💾 BOM CSV Olarak Dışa Aktar...")
+        btn_export_bom = wx.Button(panel, label=_("btn_export_csv"))
         btn_export_bom.SetFont(wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         btn_export_bom.Bind(wx.EVT_BUTTON, self._on_export_bom_clicked)
 
@@ -823,13 +841,35 @@ class MainImporterDialog(wx.Dialog):
     def _build_settings_tab(self, panel: wx.Panel):
         vbox = wx.BoxSizer(wx.VERTICAL)
 
+        # Language Settings Box
+        lang_box = wx.StaticBoxSizer(wx.VERTICAL, panel, _("lang_label"))
+        lang_fg = wx.FlexGridSizer(rows=1, cols=2, vgap=8, hgap=12)
+        lang_fg.AddGrowableCol(1, 1)
+
+        self.choice_ui_lang = wx.Choice(
+            panel,
+            choices=[
+                "Otomatik (KiCad Dili Algıla) / Auto (Detect KiCad Language)",
+                "Türkçe (Turkish)",
+                "English (İngilizce)",
+            ],
+        )
+        cur_lang = self.config.settings.get("ui_language", "auto")
+        sel_idx = 0 if cur_lang == "auto" else (1 if cur_lang == "tr" else 2)
+        self.choice_ui_lang.SetSelection(sel_idx)
+
+        lang_fg.Add(wx.StaticText(panel, label=_("lang_label")), 0, wx.ALIGN_CENTER_VERTICAL)
+        lang_fg.Add(self.choice_ui_lang, 1, wx.EXPAND)
+        lang_box.Add(lang_fg, 0, wx.EXPAND | wx.ALL, 8)
+        vbox.Add(lang_box, 0, wx.EXPAND | wx.ALL, 8)
+
         # Library Settings Box
-        lib_box = wx.StaticBoxSizer(wx.VERTICAL, panel, "Kütüphane Kayıt Yeri ve Kategori Organizasyonu")
+        lib_box = wx.StaticBoxSizer(wx.VERTICAL, panel, _("settings_lib_box"))
         fg1 = wx.FlexGridSizer(rows=5, cols=2, vgap=10, hgap=12)
         fg1.AddGrowableCol(1, 1)
 
-        self.rb_scope_global = wx.RadioButton(panel, label="Global Kütüphane (Tüm KiCad projelerinde ortak kullanılır)", style=wx.RB_GROUP)
-        self.rb_scope_project = wx.RadioButton(panel, label="Aktif Proje Klasörü (${KIPRJMOD}/Libraries altında taşınır)")
+        self.rb_scope_global = wx.RadioButton(panel, label=_("scope_global"), style=wx.RB_GROUP)
+        self.rb_scope_project = wx.RadioButton(panel, label=_("scope_project"))
         is_proj = self.config.settings.get("library_scope") == "project"
         self.rb_scope_project.SetValue(is_proj)
         self.rb_scope_global.SetValue(not is_proj)
@@ -838,44 +878,44 @@ class MainImporterDialog(wx.Dialog):
         scope_row.Add(self.rb_scope_global, 0, wx.RIGHT, 18)
         scope_row.Add(self.rb_scope_project, 0)
 
-        fg1.Add(wx.StaticText(panel, label="Kütüphane Kapsamı:"), 0, wx.ALIGN_CENTER_VERTICAL)
+        fg1.Add(wx.StaticText(panel, label=_("lbl_scope")), 0, wx.ALIGN_CENTER_VERTICAL)
         fg1.Add(scope_row, 1, wx.EXPAND)
 
         dir_row = wx.BoxSizer(wx.HORIZONTAL)
         self.txt_global_dir = wx.TextCtrl(panel, value=str(self.config.settings.get("global_library_dir", "")))
-        btn_browse_global = wx.Button(panel, label="Gözat...")
+        btn_browse_global = wx.Button(panel, label=_("btn_browse"))
         btn_browse_global.Bind(wx.EVT_BUTTON, self._on_browse_global_lib_dir)
         dir_row.Add(self.txt_global_dir, 1, wx.EXPAND | wx.RIGHT, 6)
         dir_row.Add(btn_browse_global, 0)
 
-        fg1.Add(wx.StaticText(panel, label="Global Kütüphane Klasörü:"), 0, wx.ALIGN_CENTER_VERTICAL)
+        fg1.Add(wx.StaticText(panel, label=_("lbl_global_path")), 0, wx.ALIGN_CENTER_VERTICAL)
         fg1.Add(dir_row, 1, wx.EXPAND)
 
         self.txt_lib_prefix = wx.TextCtrl(panel, value=str(self.config.settings.get("library_prefix", "BDKi_")))
-        fg1.Add(wx.StaticText(panel, label="Kütüphane Ön Eki (Örn. BDKi_):"), 0, wx.ALIGN_CENTER_VERTICAL)
+        fg1.Add(wx.StaticText(panel, label=_("lbl_prefix")), 0, wx.ALIGN_CENTER_VERTICAL)
         fg1.Add(self.txt_lib_prefix, 1, wx.EXPAND)
 
         self.chk_by_category = wx.CheckBox(
             panel,
-            label="Her komponent kategorisi için ayrı dosya oluştur (Örn: BDKi_Resistors.kicad_sym, BDKi_ICs_MCUs.kicad_sym)",
+            label=_("chk_organize"),
         )
         self.chk_by_category.SetValue(bool(self.config.settings.get("organize_by_category", True)))
-        fg1.Add(wx.StaticText(panel, label="Dosya Organizasyonu:"), 0, wx.ALIGN_CENTER_VERTICAL)
+        fg1.Add(wx.StaticText(panel, label="Dosya Organizasyonu:" if I18n.get_current_lang() == "tr" else "Organization:"), 0, wx.ALIGN_CENTER_VERTICAL)
         fg1.Add(self.chk_by_category, 1, wx.EXPAND)
 
         self.chk_auto_reg = wx.CheckBox(
             panel,
-            label="Yeni kütüphaneleri KiCad 10 sym-lib-table ve fp-lib-table dosyalarına otomatik kaydet",
+            label=_("chk_auto_reg"),
         )
         self.chk_auto_reg.SetValue(bool(self.config.settings.get("auto_register_lib_tables", True)))
-        fg1.Add(wx.StaticText(panel, label="Tablo Entegrasyonu:"), 0, wx.ALIGN_CENTER_VERTICAL)
+        fg1.Add(wx.StaticText(panel, label="Tablo Entegrasyonu:" if I18n.get_current_lang() == "tr" else "Lib Tables:"), 0, wx.ALIGN_CENTER_VERTICAL)
         fg1.Add(self.chk_auto_reg, 1, wx.EXPAND)
 
         lib_box.Add(fg1, 0, wx.EXPAND | wx.ALL, 10)
         vbox.Add(lib_box, 0, wx.EXPAND | wx.ALL, 8)
 
         # DigiKey API Settings Box
-        dk_box = wx.StaticBoxSizer(wx.VERTICAL, panel, "DigiKey Product Information API v4 Ayarları (developer.digikey.com)")
+        dk_box = wx.StaticBoxSizer(wx.VERTICAL, panel, _("settings_dk_box"))
         fg2 = wx.FlexGridSizer(rows=4, cols=2, vgap=10, hgap=12)
         fg2.AddGrowableCol(1, 1)
 
@@ -885,45 +925,62 @@ class MainImporterDialog(wx.Dialog):
             value=str(self.config.settings.get("digikey_client_secret", "")),
             style=wx.TE_PASSWORD,
         )
-        self.chk_dk_sandbox = wx.CheckBox(panel, label="DigiKey Sandbox Ortamını Kullan (Production için işaretini kaldırın)")
+        self.chk_dk_sandbox = wx.CheckBox(panel, label=_("dk_env_sandbox"))
         self.chk_dk_sandbox.SetValue(bool(self.config.settings.get("digikey_sandbox", False)))
 
-        fg2.Add(wx.StaticText(panel, label="DigiKey Client ID:"), 0, wx.ALIGN_CENTER_VERTICAL)
+        fg2.Add(wx.StaticText(panel, label=_("lbl_dk_id")), 0, wx.ALIGN_CENTER_VERTICAL)
         fg2.Add(self.txt_dk_client_id, 1, wx.EXPAND)
-        fg2.Add(wx.StaticText(panel, label="DigiKey Client Secret:"), 0, wx.ALIGN_CENTER_VERTICAL)
+        fg2.Add(wx.StaticText(panel, label=_("lbl_dk_secret")), 0, wx.ALIGN_CENTER_VERTICAL)
         fg2.Add(self.txt_dk_client_secret, 1, wx.EXPAND)
-        fg2.Add(wx.StaticText(panel, label="API Modu:"), 0, wx.ALIGN_CENTER_VERTICAL)
+        fg2.Add(wx.StaticText(panel, label=_("lbl_dk_env")), 0, wx.ALIGN_CENTER_VERTICAL)
         fg2.Add(self.chk_dk_sandbox, 1, wx.EXPAND)
 
         dk_btn_row = wx.BoxSizer(wx.HORIZONTAL)
-        btn_test_dk = wx.Button(panel, label="🔑 DigiKey API Bağlantısını Test Et")
+        btn_test_dk = wx.Button(panel, label=_("btn_test_dk"))
         btn_test_dk.Bind(wx.EVT_BUTTON, self._on_test_digikey_api)
-        btn_open_dk_dev = wx.Button(panel, label="🌐 DigiKey Developer Portalını Aç")
+        btn_open_dk_dev = wx.Button(panel, label="🌐 DigiKey Developer Portal")
         btn_open_dk_dev.Bind(wx.EVT_BUTTON, lambda e: webbrowser.open("https://developer.digikey.com/"))
         dk_btn_row.Add(btn_test_dk, 0, wx.RIGHT, 8)
         dk_btn_row.Add(btn_open_dk_dev, 0)
 
-        fg2.Add(wx.StaticText(panel, label="Test / Kayıt:"), 0, wx.ALIGN_CENTER_VERTICAL)
+        fg2.Add(wx.StaticText(panel, label="Test / Link:"), 0, wx.ALIGN_CENTER_VERTICAL)
         fg2.Add(dk_btn_row, 1, wx.EXPAND)
 
         dk_box.Add(fg2, 0, wx.EXPAND | wx.ALL, 10)
         vbox.Add(dk_box, 0, wx.EXPAND | wx.ALL, 8)
 
         # Save Settings Button
-        btn_save = wx.Button(panel, label="💾 Ayarları Kaydet")
+        btn_save = wx.Button(panel, label=_("btn_save_settings"))
         btn_save.SetFont(wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         btn_save.Bind(wx.EVT_BUTTON, self._on_save_settings)
         vbox.Add(btn_save, 0, wx.ALIGN_RIGHT | wx.ALL, 10)
 
         panel.SetSizer(vbox)
 
+    def _on_quick_lang_changed(self, event):
+        idx = self.choice_lang.GetSelection()
+        lang_code = "auto" if idx == 0 else ("tr" if idx == 1 else "en")
+        self.config.settings["ui_language"] = lang_code
+        self.config.save_settings()
+        I18n.init(lang_code, self.config._get_kicad_config_dir())
+        msg = (
+            "Dil ayarı kaydedildi. Tüm çevirilerin görünmesi için lütfen pencereyi kapatıp tekrar açın.\n\n"
+            "Language setting saved. Please close and reopen this window to display all translations."
+        )
+        wx.MessageBox(msg, "Dil / Language", wx.OK | wx.ICON_INFORMATION)
+
     def _on_browse_global_lib_dir(self, event):
-        dlg = wx.DirDialog(self, "Global Kütüphane Klasörünü Seçin", style=wx.DD_DEFAULT_STYLE)
+        dlg = wx.DirDialog(self, "Global Kütüphane Klasörünü Seçin" if I18n.get_current_lang() == "tr" else "Select Global Library Folder", style=wx.DD_DEFAULT_STYLE)
         if dlg.ShowModal() == wx.ID_OK:
             self.txt_global_dir.SetValue(dlg.GetPath())
         dlg.Destroy()
 
     def _on_save_settings(self, event):
+        sel_l = self.choice_ui_lang.GetSelection()
+        new_lang = "auto" if sel_l == 0 else ("tr" if sel_l == 1 else "en")
+        old_lang = self.config.settings.get("ui_language", "auto")
+        self.config.settings["ui_language"] = new_lang
+
         self.config.settings["library_scope"] = "project" if self.rb_scope_project.GetValue() else "global"
         self.config.settings["global_library_dir"] = self.txt_global_dir.GetValue().strip()
         self.config.settings["library_prefix"] = self.txt_lib_prefix.GetValue().strip()
@@ -935,8 +992,17 @@ class MainImporterDialog(wx.Dialog):
 
         self.config.save_settings()
         self._update_target_lib_label()
-        self.lbl_status.SetLabel("Ayarlar başarıyla kaydedildi.")
-        wx.MessageBox("Ayarlarınız başarıyla kaydedildi!", "Bilgi", wx.OK | wx.ICON_INFORMATION)
+        I18n.init(new_lang, self.config._get_kicad_config_dir())
+
+        if new_lang != old_lang:
+            wx.MessageBox(
+                "Ayarlar ve dil seçimi kaydedildi! Arayüzün yeni dille açılması için lütfen pencereyi kapatıp tekrar açın.\n\n"
+                "Settings and language saved! Please close and reopen this window to update the interface.",
+                "Bilgi / Info",
+                wx.OK | wx.ICON_INFORMATION,
+            )
+        else:
+            wx.MessageBox(_("settings_saved"), "Bilgi / Info", wx.OK | wx.ICON_INFORMATION)
 
     def _on_test_digikey_api(self, event):
         self.config.settings["digikey_client_id"] = self.txt_dk_client_id.GetValue().strip()

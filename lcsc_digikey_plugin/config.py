@@ -113,6 +113,7 @@ class ConfigManager:
             "digikey_locale_currency": "USD",
             "digikey_locale_language": "en",
             "default_bom_format": "engineering",  # "engineering", "jlcpcb", "digikey"
+            "ui_language": "auto",  # "auto", "tr", "en"
             "kicad_config_dir": self._get_kicad_config_dir(),
         }
         if os.path.exists(self.settings_path):
