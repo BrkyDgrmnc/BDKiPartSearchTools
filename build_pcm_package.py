@@ -54,9 +54,10 @@ def generate_icons(root_dir: str) -> None:
 
         # 24x24 toolbar icon inside plugins
         draw_icon(24, os.path.join(root_dir, "icon.png"))
-        # 64x64 PCM package icon inside resources/icon.png
+        # 64x64 taskbar & window icon inside plugins and resources/icon.png
+        draw_icon(64, os.path.join(root_dir, "icon_64.png"))
         draw_icon(64, os.path.join(root_dir, "resources", "icon.png"))
-        print("[OK] Generated 24x24 toolbar icon.png and 64x64 resources/icon.png")
+        print("[OK] Generated 24x24 toolbar icon.png and 64x64 taskbar/PCM icons")
     except Exception as e:
         print(f"[WARN] Could not regenerate icons via wxPython: {e}")
 
@@ -90,7 +91,7 @@ def collect_plugin_files(root_dir: str) -> List[Tuple[str, str]]:
     Returns list of (abs_file_path, zip_arcname) for files belonging inside `plugins/`.
     """
     entries: List[Tuple[str, str]] = []
-    top_files = ["__init__.py", "plugin.json", "icon.png", "run_standalone.py", "requirements.txt"]
+    top_files = ["__init__.py", "plugin.json", "icon.png", "icon_64.png", "run_standalone.py", "requirements.txt"]
     for tf in top_files:
         full = os.path.join(root_dir, tf)
         if os.path.exists(full):

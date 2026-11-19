@@ -15,6 +15,15 @@ from lcsc_digikey_plugin.gui.main_dialog import MainImporterDialog
 
 
 def main():
+    if os.name == "nt":
+        try:
+            import ctypes
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                "com.berkaydegirmenci.bdkipartsearchtools"
+            )
+        except Exception:
+            pass
+
     project_dir = None
     if len(sys.argv) > 1:
         arg_path = sys.argv[1].strip('"').strip()

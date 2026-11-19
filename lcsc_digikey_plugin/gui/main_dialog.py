@@ -74,6 +74,7 @@ class MainImporterDialog(wx.Dialog):
         )
         self.board = board
         self.config = ConfigManager()
+        self._apply_window_icon()
         self.project_dir = project_dir or self._detect_project_dir()
 
         self.supplier_service = HybridSupplierService(self.config)
@@ -93,6 +94,40 @@ class MainImporterDialog(wx.Dialog):
         # Preload BOM if a project/board is open
         if self.board is not None or self.project_dir:
             self._load_bom_from_project()
+
+    def _apply_window_icon(self):
+        """Sets custom taskbar and titlebar icon instead of default Python icon."""
+        if os.name == "nt":
+            try:
+                import ctypes
+                ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                    "com.berkaydegirmenci.bdkipartsearchtools"
+                )
+            except Exception:
+                pass
+
+        try:
+            root = self.config.plugin_root
+            candidates = [
+                os.path.join(root, "icon_64.png"),
+                os.path.join(root, "resources", "icon.png"),
+                os.path.join(root, "icon.png"),
+            ]
+            bundle = wx.IconBundle()
+            primary_icon = None
+            for p in candidates:
+                if os.path.exists(p):
+                    ico = wx.Icon(p, wx.BITMAP_TYPE_PNG)
+                    if ico.IsOk():
+                        bundle.AddIcon(ico)
+                        if primary_icon is None:
+                            primary_icon = ico
+            if not bundle.IsEmpty():
+                self.SetIcons(bundle)
+            if primary_icon is not None:
+                self.SetIcon(primary_icon)
+        except Exception:
+            pass
 
     def _detect_project_dir(self) -> Optional[str]:
         # 1. From pcbnew board if launched inside PCB Editor
