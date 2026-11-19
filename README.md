@@ -2,6 +2,8 @@
 
 **BDKiPartSearchTools** (by Berkay Değirmenci) is a KiCad 8 / 9 / 10 plugin to search electronic components from online suppliers (**LCSC / EasyEDA**, **DigiKey**, etc.), preview and import their **Schematic Symbols (`.kicad_sym`)**, **PCB Footprints (`.kicad_mod`)**, and **3D Models (`.step` / `.wrl`)** into categorized libraries, and generate **priced Engineering BOMs** with live stock and part numbers.
 
+> 🇹🇷 **Türkçe Kurulum ve Kullanım Kılavuzu için:** [KURULUM_KILAVUZU.md](./KURULUM_KILAVUZU.md) dosyasına bakabilirsiniz.
+
 ## Key Features
 * **Direct Schematic & PCB Editor Integration:** Supports both KiCad 9/10 IPC API (`plugin.json` for Schematic Editor, Symbol Editor, PCB Editor, and Project Manager) and `pcbnew.ActionPlugin`.
 * **Zero External Dependencies:** Built-in EasyEDA-to-KiCad 10 S-expression converter and 3D STEP/WRL downloader using KiCad's bundled Python and `wxPython`.
