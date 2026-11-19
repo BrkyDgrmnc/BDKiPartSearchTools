@@ -43,9 +43,7 @@ class HybridSupplierService:
             return lcsc_results
 
         if mode == "digikey":
-            # Enrich DigiKey results with LCSC CAD codes by matching MPN
-            for dk_item in dk_results:
-                self._enrich_digikey_with_lcsc(dk_item)
+            # Return pure DigiKey search results without LCSC enrichment
             return dk_results
 
         # Hybrid mode: merge by MPN (case-insensitive)
@@ -100,18 +98,38 @@ class HybridSupplierService:
                 dk_item["lcsc_stock"] = top.get("lcsc_stock", 0)
                 dk_item["source"] = "DigiKey + LCSC CAD"
 
+    def _find_lcsc_cad_id_by_mpn(self, mpn: str) -> str:
+        """Finds an EasyEDA/LCSC part ID by MPN solely for 2D/3D CAD resolution without altering part fields."""
+        mpn = (mpn or "").strip()
+        if not mpn:
+            return ""
+        matches = self.lcsc.search_components(mpn, page_size=5)
+        for m in matches:
+            if (m.get("mpn") or "").strip().upper() == mpn.upper():
+                return (m.get("lcsc_part") or "").strip()
+        if matches:
+            top = matches[0]
+            top_mpn = (top.get("mpn") or "").strip().upper()
+            if top_mpn and (mpn.upper() in top_mpn or top_mpn in mpn.upper()):
+                return (top.get("lcsc_part") or "").strip()
+        return ""
+
     def resolve_cad_for_part(self, part_info: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
         Ensures CAD data (symbol_data, footprint_data, model_3d) is loaded for a selected part.
-        If the part only has an MPN (e.g., from DigiKey), searches LCSC/EasyEDA by MPN first.
+        If the part only has an MPN (e.g., from DigiKey), resolves CAD geometry by MPN without overwriting DigiKey source/LCSC fields.
         """
         if part_info.get("_cad_data"):
             return part_info["_cad_data"]
 
+        is_pure_digikey = part_info.get("source") == "DigiKey"
         lcsc_id = (part_info.get("lcsc_part") or "").strip()
         if not lcsc_id and part_info.get("mpn"):
-            self._enrich_digikey_with_lcsc(part_info)
-            lcsc_id = (part_info.get("lcsc_part") or "").strip()
+            if is_pure_digikey:
+                lcsc_id = self._find_lcsc_cad_id_by_mpn(part_info["mpn"])
+            else:
+                self._enrich_digikey_with_lcsc(part_info)
+                lcsc_id = (part_info.get("lcsc_part") or "").strip()
 
         if not lcsc_id:
             return None
@@ -126,12 +144,13 @@ class HybridSupplierService:
                 part_info["manufacturer"] = meta["manufacturer"]
             if not part_info.get("datasheet") and meta.get("datasheet"):
                 part_info["datasheet"] = meta["datasheet"]
-            if not part_info.get("unit_price") and meta.get("unit_price"):
-                part_info["unit_price"] = meta["unit_price"]
-                part_info["lcsc_price"] = meta["unit_price"]
-            if not part_info.get("stock") and meta.get("stock"):
-                part_info["stock"] = meta["stock"]
-                part_info["lcsc_stock"] = meta["stock"]
+            if not is_pure_digikey:
+                if not part_info.get("unit_price") and meta.get("unit_price"):
+                    part_info["unit_price"] = meta["unit_price"]
+                    part_info["lcsc_price"] = meta["unit_price"]
+                if not part_info.get("stock") and meta.get("stock"):
+                    part_info["stock"] = meta["stock"]
+                    part_info["lcsc_stock"] = meta["stock"]
             if not part_info.get("digikey_url") and part_info.get("mpn"):
                 part_info["digikey_url"] = self.digikey.build_digikey_search_url(part_info["mpn"])
         return cad

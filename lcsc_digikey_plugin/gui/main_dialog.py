@@ -394,7 +394,8 @@ class MainImporterDialog(wx.Dialog):
         self.sym_canvas.set_geometry(None, "Aranıyor...")
         self.fp_canvas.set_geometry(None, "Aranıyor...", False)
 
-        self._set_busy(True, f"'{query}' aranıyor (LCSC / EasyEDA & DigiKey)...")
+        status_src = "DigiKey API" if mode == "digikey" else ("LCSC / EasyEDA" if mode == "lcsc" else "LCSC / EasyEDA & DigiKey")
+        self._set_busy(True, f"'{query}' aranıyor ({status_src})...")
         self.list_results.DeleteAllItems()
         self.search_results = []
 
@@ -505,8 +506,11 @@ class MainImporterDialog(wx.Dialog):
             if meta.get("prefix"):
                 self.txt_ref_prefix.SetValue(meta["prefix"])
             if not self.txt_fp_name.GetValue().strip() and cad.get("footprint_name"):
-                self.txt_fp_name.SetValue(cad["footprint_name"])
-            if not self.txt_lcsc_code.GetValue().strip() and cad.get("lcsc_part"):
+                clean_fp = self.library_manager._clean_footprint_name(str(cad["footprint_name"]))
+                self.txt_fp_name.SetValue(clean_fp)
+                if not self.txt_pkg.GetValue().strip():
+                    self.txt_pkg.SetValue(clean_fp)
+            if part.get("source") != "DigiKey" and not self.txt_lcsc_code.GetValue().strip() and cad.get("lcsc_part"):
                 self.txt_lcsc_code.SetValue(cad["lcsc_part"])
             if not self.txt_mfg.GetValue().strip() and meta.get("manufacturer"):
                 self.txt_mfg.SetValue(meta["manufacturer"])
