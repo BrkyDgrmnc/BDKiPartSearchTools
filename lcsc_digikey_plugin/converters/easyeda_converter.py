@@ -518,19 +518,29 @@ class EasyEDA2KiCadConverter:
             "bbox_mm": (min(bbox_xs), min(bbox_ys), max(bbox_xs), max(bbox_ys)),
         }
 
+    @staticmethod
+    def _safe_float(val: Any, default: float = 0.0) -> float:
+        if val is None or val == "":
+            return default
+        try:
+            return float(val)
+        except Exception:
+            return default
+
     def _parse_ee_pad(self, shape: str, to_fx, to_fy) -> Optional[Dict[str, Any]]:
         try:
             p = shape.split("~")
             ee_shape = p[1].upper()
-            x = to_fx(float(p[2]))
-            y = to_fy(float(p[3]))
-            w = max(0.05, round(float(p[4]) * EE_TO_MM, 4))
-            h = max(0.05, round(float(p[5]) * EE_TO_MM, 4))
-            layer_id = p[6]
-            number = p[8].strip()
-            hole_rad_ee = float(p[9]) if len(p) > 9 and p[9] else 0.0
-            rot = float(p[11]) if len(p) > 11 and p[11] else 0.0
-            slot_len_ee = float(p[12]) if len(p) > 12 and p[12] else 0.0
+            x = to_fx(self._safe_float(p[2]))
+            y = to_fy(self._safe_float(p[3]))
+            w = max(0.05, round(self._safe_float(p[4], 1.0) * EE_TO_MM, 4))
+            h = max(0.05, round(self._safe_float(p[5], 1.0) * EE_TO_MM, 4))
+            layer_id = p[6] if len(p) > 6 else "1"
+            number = p[8].strip() if len(p) > 8 else "1"
+            hole_rad_ee = self._safe_float(p[9]) if len(p) > 9 else 0.0
+            rot = self._safe_float(p[11]) if len(p) > 11 else 0.0
+            # In EasyEDA PAD record: p[12] is shape ID (e.g. gge1002 / rep4), p[13] is hole_length (slot length)
+            slot_len_ee = self._safe_float(p[13]) if len(p) > 13 else 0.0
 
             drill_d = round(hole_rad_ee * 2.0 * EE_TO_MM, 4)
             slot_len = round(slot_len_ee * EE_TO_MM, 4)
@@ -617,7 +627,11 @@ class EasyEDA2KiCadConverter:
         try:
             p = shape.split("~")
             layer_id = p[1]
-            if layer_id in ("99", "100", "101"):
+            # Skip EasyEDA internal 2D lead/paste preview layers (100=LeadShape, 5/6=Paste, 7/8=Mask)
+            # since real copper pads already define F.Cu/F.Paste/F.Mask
+            if layer_id in ("100", "5", "6", "7", "8"):
+                return None
+            if layer_id in ("99", "101"):
                 layer = EASYEDA_LAYER_MAP.get(layer_id, "F.Fab")
             else:
                 layer = EASYEDA_LAYER_MAP.get(layer_id, "F.SilkS")
@@ -639,7 +653,8 @@ class EasyEDA2KiCadConverter:
                 i += 1
             if len(pts) < 3:
                 return None
-            return {"layer": layer, "pts": pts}
+            fill_mode = "none" if layer in ("F.CrtYd", "F.Fab") else "solid"
+            return {"layer": layer, "pts": pts, "fill": fill_mode}
         except Exception:
             return None
 
@@ -701,9 +716,10 @@ class EasyEDA2KiCadConverter:
         # Solid Regions / Polygons
         for reg in geom["regions"]:
             pts_str = " ".join(f"(xy {px} {py})" for px, py in reg["pts"])
+            fill_mode = reg.get("fill", "none")
             lines.append(
                 f'\t(fp_poly (pts {pts_str}) '
-                f'(stroke (width 0.1) (type solid)) (fill solid) (layer "{reg["layer"]}"))'
+                f'(stroke (width 0.1) (type solid)) (fill {fill_mode}) (layer "{reg["layer"]}"))'
             )
 
         # Non-plated Mounting Holes
