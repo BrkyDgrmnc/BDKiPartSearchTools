@@ -101,7 +101,7 @@ class MainImporterDialog(wx.Dialog):
             try:
                 import ctypes
                 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                    "com.github.brkydgrmnc.bdkipartsearchtools"
+                    "com.berkaydegirmenci.bdkipartsearchtools"
                 )
             except Exception:
                 pass

@@ -1,6 +1,6 @@
 {
   "$schema": "https://go.kicad.org/api/schemas/v1",
-  "identifier": "com.github.brkydgrmnc.bdkipartsearchtools",
+  "identifier": "com.berkaydegirmenci.bdkipartsearchtools",
   "name": "BDKiPartSearchTools",
   "description": "Component search, library importer (Symbol/Footprint/3D), and Smart BOM Manager by Berkay Degirmenci.",
   "runtime": {

@@ -9,7 +9,7 @@
 Herhangi bir ek program veya Python paketi kurmanıza gerek yoktur. Eklenti KiCad'in kendi altyapısıyla doğrudan çalışır.
 
 ### Yöntem 1: ZIP Paketi ile Kurulum (GitHub Releases)
-1. [GitHub Releases](https://github.com/BrkyDgrmnc/BDKiPartSearchTools/releases) sayfasından en güncel **`com.github.brkydgrmnc.bdkipartsearchtools-x.x.x-pcm.zip`** dosyasını bilgisayarınıza indirin *(ZIP dosyasını klasöre çıkartmayın)*.
+1. [GitHub Releases](https://github.com/BrkyDgrmnc/BDKiPartSearchTools/releases) sayfasından en güncel **`com.berkaydegirmenci.bdkipartsearchtools-x.x.x-pcm.zip`** dosyasını bilgisayarınıza indirin *(ZIP dosyasını klasöre çıkartmayın)*.
 2. **KiCad** ana penceresini açın ve **`Eklenti ve İçerik Yöneticisi` (Plugin and Content Manager)** butonuna tıklayın.
 3. Pencerenin sol alt köşesindeki **`Dosyadan Kur...` (Install from File...)** butonuna tıklayın ve indirdiğiniz `.zip` dosyasını seçin.
 4. Sağ alt köşedeki **`Bekleyen Değişiklikleri Uygula` (Apply Pending Changes)** butonuna tıklayın.

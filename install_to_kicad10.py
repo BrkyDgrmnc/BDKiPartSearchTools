@@ -22,14 +22,14 @@ def install():
         os.path.expandvars(r"%USERPROFILE%\Documents\KiCad\10.0\plugins\com_aridrones_lcscdigikeyimporter"),
         os.path.expandvars(r"%USERPROFILE%\Documents\KiCad\10.0\3rdparty\plugins\com_aridrones_lcscdigikeyimporter"),
         os.path.expandvars(r"%USERPROFILE%\Documents\KiCad\10.0\3rdparty\plugins\com_berkaydegirmenci_bdpartsearchtools"),
-        os.path.expandvars(r"%USERPROFILE%\Documents\KiCad\10.0\3rdparty\plugins\com_berkaydegirmenci_bdkipartsearchtools"),
+        os.path.expandvars(r"%USERPROFILE%\Documents\KiCad\10.0\3rdparty\plugins\com_github_brkydgrmnc_bdkipartsearchtools"),
         os.path.expandvars(r"%USERPROFILE%\Documents\KiCad\10.0\scripting\plugins\kicad-lcsc-digikey-plugin"),
     ]
     for old_dir in old_dirs:
         if os.path.exists(old_dir):
             shutil.rmtree(old_dir, ignore_errors=True)
 
-    pcm_pkg_folder = "com_github_brkydgrmnc_bdkipartsearchtools"
+    pcm_pkg_folder = "com_berkaydegirmenci_bdkipartsearchtools"
     target = os.path.expandvars(rf"%USERPROFILE%\Documents\KiCad\10.0\3rdparty\plugins\{pcm_pkg_folder}")
     os.makedirs(target, exist_ok=True)
     shutil.copytree(
@@ -41,13 +41,13 @@ def install():
     print("Installed to:", target)
 
     # Register in eeschema.json and pcbnew.json
-    action_key = "com.github.brkydgrmnc.bdkipartsearchtools.open_bdkipartsearchtools"
+    action_key = "com.berkaydegirmenci.bdkipartsearchtools.open_bdkipartsearchtools"
     old_keys = {
         "com.ari.lcsc_digikey_importer.open_importer",
         "com.github.aridrones.lcsc-digikey-importer.open-importer",
         "com.aridrones.lcscdigikeyimporter.open_importer",
         "com.berkaydegirmenci.bdpartsearchtools.open_bdpartsearchtools",
-        "com.berkaydegirmenci.bdkipartsearchtools.open_bdkipartsearchtools",
+        "com.github.brkydgrmnc.bdkipartsearchtools.open_bdkipartsearchtools",
     }
 
     for cfg_name in ("eeschema.json", "pcbnew.json"):

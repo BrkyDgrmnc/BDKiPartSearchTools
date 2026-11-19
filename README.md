@@ -1,4 +1,4 @@
-# BDKiPartSearchTools (`com.github.brkydgrmnc.bdkipartsearchtools`)
+# BDKiPartSearchTools (`com.berkaydegirmenci.bdkipartsearchtools`)
 
 **BDKiPartSearchTools** (by Berkay Değirmenci) is a KiCad 8 / 9 / 10 plugin to search electronic components from online suppliers (**LCSC / EasyEDA**, **DigiKey**, etc.), preview and import their **Schematic Symbols (`.kicad_sym`)**, **PCB Footprints (`.kicad_mod`)**, and **3D Models (`.step` / `.wrl`)** into categorized libraries, and generate **priced Engineering BOMs** with live stock and part numbers.
 
