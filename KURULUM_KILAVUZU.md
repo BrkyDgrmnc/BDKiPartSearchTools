@@ -9,7 +9,7 @@
 Herhangi bir ek program veya Python paketi kurmanıza gerek yoktur. Eklenti KiCad'in kendi altyapısıyla doğrudan çalışır.
 
 ### Yöntem 1: ZIP Paketi ile Kurulum (GitHub Releases)
-1. [GitHub Releases](https://github.com/BrkyDgrmnc/BDKiPartSearchTools/releases) sayfasından en güncel **`com.berkaydegirmenci.bdkipartsearchtools-x.x.x-pcm.zip`** dosyasını bilgisayarınıza indirin *(ZIP dosyasını klasöre çıkartmayın)*.
+1. [GitHub Releases](https://github.com/BrkyDgrmnc/BDKiPartSearchTools/releases) sayfasından en güncel **`com.github.brkydgrmnc.bdkipartsearchtools-x.x.x-pcm.zip`** dosyasını bilgisayarınıza indirin *(ZIP dosyasını klasöre çıkartmayın)*.
 2. **KiCad** ana penceresini açın ve **`Eklenti ve İçerik Yöneticisi` (Plugin and Content Manager)** butonuna tıklayın.
 3. Pencerenin sol alt köşesindeki **`Dosyadan Kur...` (Install from File...)** butonuna tıklayın ve indirdiğiniz `.zip` dosyasını seçin.
 4. Sağ alt köşedeki **`Bekleyen Değişiklikleri Uygula` (Apply Pending Changes)** butonuna tıklayın.
@@ -54,7 +54,7 @@ Kurulum sonrasında eklentiye hem **Şematik Editörü** hem de **PCB Editörü*
 4. **KiCad Kütüphanesine İçe Aktarma:**
    * **`📥 KiCad Kütüphanesine İçe Aktar (Sembol + Footprint + 3D)`** butonuna tıklayın.
    * Saniyeler içinde parçanın şematik sembolü, PCB footprint'i ve 3D STEP modeli indirilir ve KiCad kütüphane tablolarınıza otomatik kaydedilir.
-   * Sembolün içine `Manufacturer`, `MPN`, `LCSC_Part`, `DigiKey_Part`, `Unit_Price`, `Stock`, `Datasheet` ve `Supplier_URL` bilgileri otomatik gömülür.
+   * Sembolün içine `Manufacturer`, `MPN`, `LCSC_Part`, `DigiKey_Part`, `Datasheet` ve `Supplier_URL` bilgileri otomatik gömülür (dinamik Fiyat ve Stok bilgisi ise tedarikçi kuralları ve güncellik gereği 2. Sekmedeki BOM yöneticisinde anlık canlı sorgulanır).
 
 5. **Şematiğe Yerleştirme:**
    * **Şematik Editörüne (Eeschema)** dönün, klavyeden **`A`** (*Sembol Ekle*) tuşuna basın ve indirdiğiniz parçanın adını yazıp şematiğinize yerleştirin!

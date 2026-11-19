@@ -67,9 +67,9 @@ def validate_official_rules(meta: dict, plugin_meta: dict) -> None:
     assert 2 <= len(ident) <= 50, f"Identifier length must be 2..50 chars (got {len(ident)})"
     assert re.match(r"^[a-zA-Z][-a-zA-Z0-9.]{0,98}[a-zA-Z0-9]$", ident), f"Invalid PCM identifier: {ident}"
     assert "_" not in ident, "PCM identifier must not contain underscores (_)"
-    # Also verify kicommon.dll C++ IPC plugin identifier regex: [\w\d]{2,}\.[\w\d]+\.[\w\d]+
-    assert re.fullmatch(r"[\w\d]{2,}\.[\w\d]+\.[\w\d]+", plugin_meta.get("identifier", "")), (
-        f"plugin.json identifier '{plugin_meta.get('identifier')}' must match C++ regex [\\w\\d]{{2,}}\\.[\\w\\d]+\\.[\\w\\d]+"
+    # Also verify kicommon.dll C++ IPC plugin identifier regex: [\w\d]{2,}(\.[\w\d]+)+
+    assert re.fullmatch(r"[\w\d]{2,}(\.[\w\d]+)+", plugin_meta.get("identifier", "")), (
+        f"plugin.json identifier '{plugin_meta.get('identifier')}' must match C++ regex [\\w\\d]{{2,}}(\\.[\\w\\d]+)+"
     )
 
     desc = meta.get("description", "")

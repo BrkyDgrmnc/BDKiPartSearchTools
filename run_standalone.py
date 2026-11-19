@@ -19,7 +19,7 @@ def main():
         try:
             import ctypes
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                "com.berkaydegirmenci.bdkipartsearchtools"
+                "com.github.brkydgrmnc.bdkipartsearchtools"
             )
         except Exception:
             pass

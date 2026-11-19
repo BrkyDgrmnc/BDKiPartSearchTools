@@ -101,7 +101,7 @@ class MainImporterDialog(wx.Dialog):
             try:
                 import ctypes
                 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                    "com.berkaydegirmenci.bdkipartsearchtools"
+                    "com.github.brkydgrmnc.bdkipartsearchtools"
                 )
             except Exception:
                 pass
@@ -593,7 +593,8 @@ class MainImporterDialog(wx.Dialog):
             f"• Footprint Dosyası: {result.get('fp_file_path')}",
             f"• İndirilen 3D Modeller ({len(d3d)} adet): {', '.join(os.path.basename(p) for p in d3d) if d3d else 'Yok'}",
             "",
-            "💡 BOM Alanları (MPN, LCSC_Part, DigiKey_Part, Unit_Price, Stock, Datasheet, Supplier_URL) sembolün içine otomatik gömüldü!",
+            "💡 Mühendislik ve Tedarikçi Alanları (MPN, Manufacturer, LCSC_Part, DigiKey_Part, Datasheet, Supplier_URL) sembolün içine gömüldü!",
+            "Tedarikçi sözleşmelerine tam uyum ve güncellik için dinamik Fiyat & Stok bilgileri şematik yerine 2. Sekmedeki (BOM) canlı sorguda gösterilir.",
             "Şematik Editöründe (Eeschema) 'A' tuşuna basarak doğrudan şematiğinize ekleyebilirsiniz.",
         ]
         wx.MessageBox("\n".join(msg_lines), "Kütüphaneye Eklendi", wx.OK | wx.ICON_INFORMATION)

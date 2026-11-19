@@ -344,7 +344,7 @@ class EasyEDA2KiCadConverter:
         lines.extend(self._format_sym_property("Datasheet", ds_str, 0, round(val_y - 5.08, 2), hide=True))
         lines.extend(self._format_sym_property("Description", desc_str, 0, 0, hide=True))
 
-        # Custom BOM & Supplier Properties embedded directly in symbol
+        # Custom BOM & Supplier Properties embedded directly in symbol (Note: Dynamic Price & Stock are intentionally omitted to comply with supplier TOS and dynamic volatility)
         custom_fields = [
             ("Manufacturer", properties.get("Manufacturer", "")),
             ("MPN", properties.get("MPN", symbol_name)),
@@ -352,10 +352,6 @@ class EasyEDA2KiCadConverter:
             ("DigiKey_Part", properties.get("DigiKey_Part", "")),
             ("Category", properties.get("Category", "")),
             ("Package", properties.get("Package", "")),
-            ("Unit_Price", properties.get("Unit_Price", "")),
-            ("LCSC_Price", properties.get("LCSC_Price", "")),
-            ("DigiKey_Price", properties.get("DigiKey_Price", "")),
-            ("Stock", properties.get("Stock", "")),
             ("Part_Type", properties.get("Part_Type", "")),
             ("Supplier_URL", properties.get("Supplier_URL", "")),
             ("DigiKey_URL", properties.get("DigiKey_URL", "")),
